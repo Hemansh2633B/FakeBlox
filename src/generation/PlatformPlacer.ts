@@ -34,10 +34,17 @@ export class PlatformPlacer {
     if (difficulty === 'extreme') return GAME_CONFIG.generation.maxGapDistanceExtreme;
     return GAME_CONFIG.generation.maxGapDistanceNormal;
   }
+  private getMinWidthForDifficulty(difficulty: string): number {
+    if (difficulty === 'easy') return GAME_CONFIG.generation.minPlatformWidthEasy;
+    if (difficulty === 'hard') return GAME_CONFIG.generation.minPlatformWidthHard;
+    if (difficulty === 'extreme') return GAME_CONFIG.generation.minPlatformWidthExtreme;
+    return GAME_CONFIG.generation.minPlatformWidthNormal;
+  }
 
   public generateInitialPath(count: number, difficulty: string, themes: Theme[]): PlatformPlacement[] {
     const placements: PlatformPlacement[] = [];
     const maxGap = this.getMaxGapForDifficulty(difficulty);
+    const minWidth = this.getMinWidthForDifficulty(difficulty);
     const sectionSize = GAME_CONFIG.generation.platformsPerSection;
     let currentPos = new THREE.Vector3(0, 0, 0);
     const spawnTheme = themes[0];
@@ -57,7 +64,7 @@ export class PlatformPlacer {
       const horizontalGap = this.rng.nextRange(GAME_CONFIG.generation.minGapDistance, maxGap);
       const verticalGap = this.rng.nextRange(-2, GAME_CONFIG.generation.maxUpwardGap);
       const lateralOffset = this.rng.nextRange(-5, 5);
-      const width = this.rng.nextRange(GAME_CONFIG.generation.minPlatformWidth, GAME_CONFIG.generation.maxPlatformWidth);
+      const width = this.rng.nextRange(minWidth, GAME_CONFIG.generation.maxPlatformWidth);
       const depth = this.rng.nextRange(GAME_CONFIG.generation.minPlatformDepth, GAME_CONFIG.generation.maxPlatformDepth);
       currentPos.x += lateralOffset;
       currentPos.y += verticalGap;

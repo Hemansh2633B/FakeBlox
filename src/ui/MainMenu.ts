@@ -81,5 +81,11 @@ export class MainMenu {
     });
   }
 
+  public setInitialValues(seed: string, difficulty: string): void {
+    this.seedInput.value = seed || 'hello';
+    const allowedDifficulties = new Set(['easy', 'normal', 'hard', 'extreme']);
+    this.difficultySelect.value = allowedDifficulties.has(difficulty) ? difficulty : 'normal';
+  }
+
   public setVisible(visible: boolean): void { this.element.style.display = visible ? 'block' : 'none'; }
 }
