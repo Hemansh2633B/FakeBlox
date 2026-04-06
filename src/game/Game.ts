@@ -21,6 +21,7 @@ import { TouchControls } from '../ui/TouchControls';
 import { Checkpoint } from '../objects/Checkpoint';
 import { Collectible } from '../objects/Collectible';
 import { parseDifficulty } from '../utils/seed';
+import type { AudioSettings } from '../systems/AudioManager';
 
 export enum GameState {
   MENU,
@@ -90,7 +91,15 @@ export class Game {
     this.mainMenu.setInitialValues(this.currentSeed, this.currentDifficulty);
     this.pauseMenu = new PauseMenu(this.resumeGame.bind(this));
     this.endScreen = new EndScreen(this.goToMenu.bind(this));
-    this.settingsMenu = new SettingsMenu((s) => this.audio.setMasterVolume(s.master));
+    const persistedSettings = this.save.loadSettings() as AudioSettings | null;
+    if (persistedSettings) {
+      this.audio.applySettings(persistedSettings);
+    }
+    this.settingsMenu = new SettingsMenu((settings) => {
+      this.audio.applySettings(settings);
+      this.save.saveSettings(settings);
+    });
+    this.settingsMenu.setValues(this.audio.getSettings());
     this.touchControls = new TouchControls(() => {}, () => {}, () => {});
 
     this.goToMenu();

@@ -139,6 +139,20 @@ Star rating thresholds:
 - No finish line; focus metrics are distance and stars collected.
 - Checkpoints continue periodically for non-extreme sections.
 
+### Audio Design (Current Integration)
+
+- `AudioManager` now pre-registers gameplay/UI SFX IDs for:
+  - movement/player states: `jump`, `land_soft`, `land_hard`, `death`, `respawn`, `bounce`
+  - progression: `checkpoint`, `collectible`, `level_complete`
+  - obstacle/environment loops: `moving_platform`, `kill_brick_hum`, `spinning_bar`, `laser_charge`, `laser_fire`, `conveyor`
+  - UI/countdown: `button_hover`, `button_click`, `countdown_tick`, `countdown_go`
+- Settings menu supports:
+  - Master Volume (0–100%)
+  - Music Volume (0–100%)
+  - SFX Volume (0–100%)
+  - Mute All toggle
+- Audio settings are persisted with `SaveManager` and applied on startup.
+
 ---
 
 ## 🗂️ Project Structure
