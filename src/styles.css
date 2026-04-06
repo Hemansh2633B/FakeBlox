@@ -30,3 +30,24 @@ body {
 #ui-container * {
   pointer-events: auto;
 }
+
+#main-menu .menu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#main-menu input,
+#main-menu select,
+#main-menu button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 16px;
+}
+
+#main-menu .seed-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
