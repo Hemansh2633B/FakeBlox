@@ -15,6 +15,22 @@ export class PlayerController {
   private jumpCooldown: number = 0;
   private coyoteTimeLeft: number = 0;
   private jumpBufferLeft: number = 0;
+  private respawnInvincibilityLeft: number = 0;
+  private setModelOpacity(opacity: number): void {
+    this.model.mesh.traverse((child: THREE.Object3D) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const material = child.material;
+      if (Array.isArray(material)) {
+        material.forEach((mat) => {
+          mat.transparent = opacity < 1;
+          mat.opacity = opacity;
+        });
+        return;
+      }
+      material.transparent = opacity < 1;
+      material.opacity = opacity;
+    });
+  }
 
   constructor(scene: THREE.Scene, physics: PhysicsWorld, input: InputManager) {
     this.scene = scene;
@@ -30,6 +46,13 @@ export class PlayerController {
   }
 
   public update(deltaTime: number, cameraRotationY: number): void {
+    if (this.respawnInvincibilityLeft > 0) {
+      this.respawnInvincibilityLeft = Math.max(0, this.respawnInvincibilityLeft - deltaTime);
+      const flash = 0.4 + Math.abs(Math.sin(Date.now() * 0.03)) * 0.6;
+      this.setModelOpacity(flash);
+    } else {
+      this.setModelOpacity(1);
+    }
     this.updateGroundedState();
     this.handleMovement(deltaTime, cameraRotationY);
     this.handleJump(deltaTime);
@@ -87,5 +110,13 @@ export class PlayerController {
   public respawn(x: number, y: number, z: number): void {
     this.body.position.set(x, y, z);
     this.body.velocity.set(0, 0, 0);
+  }
+
+  public setRespawnInvincibility(): void {
+    this.respawnInvincibilityLeft = GAME_CONFIG.player.respawnInvincibilityDuration;
+  }
+
+  public isInvincible(): boolean {
+    return this.respawnInvincibilityLeft > 0;
   }
 }

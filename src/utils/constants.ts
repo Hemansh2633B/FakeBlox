@@ -54,7 +54,10 @@ export const GAME_CONFIG = {
   // ============================================
   generation: {
     // Platform sizing
-    minPlatformWidth: 1.5,
+    minPlatformWidthEasy: 3.0,
+    minPlatformWidthNormal: 1.5,
+    minPlatformWidthHard: 1.0,
+    minPlatformWidthExtreme: 0.8,
     maxPlatformWidth: 8,
     minPlatformDepth: 1.5,
     maxPlatformDepth: 6,
@@ -79,10 +82,14 @@ export const GAME_CONFIG = {
 
     // Section sizing
     platformsPerSection: 12,         // average platforms per themed section
-    platformsPerCheckpointEasy: 7,
-    platformsPerCheckpointNormal: 9,
-    platformsPerCheckpointHard: 12,
-    platformsPerCheckpointExtreme: 18,
+    checkpointsPerEasyMin: 6,
+    checkpointsPerEasyMax: 8,
+    checkpointsPerNormalMin: 8,
+    checkpointsPerNormalMax: 10,
+    checkpointsPerHardMin: 10,
+    checkpointsPerHardMax: 14,
+    checkpointsPerExtremeMin: 15,
+    checkpointsPerExtremeMax: 20,
 
     // Obstacle density (per 10 platforms)
     obstacleDensityEasy: 1,

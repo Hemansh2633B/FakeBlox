@@ -12,6 +12,7 @@ export interface LevelMetadata {
   platforms: Platform[];
   placements: PlatformPlacement[];
   checkpointIndices: number[];
+  collectiblePositions: { x: number; y: number; z: number }[];
   totalStars: number;
   themeSequence: string[];
 }
@@ -58,22 +59,52 @@ export class LevelGenerator {
     return GAME_CONFIG.generation.maxGapDistanceNormal;
   }
 
-  private getCheckpointIntervalRange(difficulty: Difficulty): [number, number] {
-    if (difficulty === 'easy') return [6, 8];
-    if (difficulty === 'hard') return [10, 14];
-    if (difficulty === 'extreme') return [15, 20];
-    return [8, 10];
+  private getCheckpointIntervalRange(difficulty: string): { min: number; max: number } {
+    if (difficulty === 'easy') {
+      return { min: GAME_CONFIG.generation.checkpointsPerEasyMin, max: GAME_CONFIG.generation.checkpointsPerEasyMax };
+    }
+    if (difficulty === 'hard') {
+      return { min: GAME_CONFIG.generation.checkpointsPerHardMin, max: GAME_CONFIG.generation.checkpointsPerHardMax };
+    }
+    if (difficulty === 'extreme') {
+      return { min: GAME_CONFIG.generation.checkpointsPerExtremeMin, max: GAME_CONFIG.generation.checkpointsPerExtremeMax };
+    }
+    return { min: GAME_CONFIG.generation.checkpointsPerNormalMin, max: GAME_CONFIG.generation.checkpointsPerNormalMax };
   }
 
-  private buildCheckpointIndices(totalPlatforms: number, difficulty: Difficulty): number[] {
-    const [minInterval, maxInterval] = this.getCheckpointIntervalRange(difficulty);
+  private generateCheckpointIndices(difficulty: string): number[] {
     const indices: number[] = [];
-    let current = this.rng.nextInt(minInterval, maxInterval);
-    while (current < totalPlatforms - 2) {
-      indices.push(current);
-      current += this.rng.nextInt(minInterval, maxInterval);
+    const range = this.getCheckpointIntervalRange(difficulty);
+    let i = this.rng.nextInt(range.min, range.max + 1);
+    while (i < this.placements.length - 1) {
+      indices.push(i);
+      i += this.rng.nextInt(range.min, range.max + 1);
     }
     return indices;
+  }
+
+  private generateCollectiblePositions(totalStars: number): { x: number; y: number; z: number }[] {
+    const positions: { x: number; y: number; z: number }[] = [];
+    if (this.placements.length === 0) return positions;
+    const mainPathCount = Math.floor(totalStars * 0.6);
+    const detourCount = Math.floor(totalStars * 0.25);
+    const secretCount = totalStars - mainPathCount - detourCount;
+    const all = this.placements.slice(1);
+    for (let i = 0; i < totalStars; i++) {
+      const target = all[Math.floor(this.rng.next() * all.length)];
+      const isMain = i < mainPathCount;
+      const isDetour = i >= mainPathCount && i < mainPathCount + detourCount;
+      const offsetX = isMain ? this.rng.nextRange(-0.75, 0.75) : this.rng.nextRange(-3.5, 3.5);
+      const offsetZ = isMain ? this.rng.nextRange(-0.75, 0.75) : this.rng.nextRange(-2.5, 2.5);
+      const offsetY = isDetour ? this.rng.nextRange(0.6, 1.4) : this.rng.nextRange(0.9, 1.8);
+      const secretBoost = i >= totalStars - secretCount ? this.rng.nextRange(2.5, 4.5) : 0;
+      positions.push({
+        x: target.position.x + offsetX + (secretBoost > 0 ? Math.sign(offsetX || 1) * secretBoost : 0),
+        y: target.position.y + offsetY,
+        z: target.position.z + offsetZ + (secretBoost > 0 ? Math.sign(offsetZ || 1) * (secretBoost * 0.6) : 0),
+      });
+    }
+    return positions;
   }
 
   public generate(seed: string, difficulty: Difficulty = 'normal'): LevelMetadata {
@@ -93,13 +124,16 @@ export class LevelGenerator {
       attempts += 1;
     } while (!this.validator.validateLevel(this.placements, maxValidatedGap) && attempts < 5);
 
-    const checkpointIndices = this.buildCheckpointIndices(this.placements.length, difficulty);
+    const checkpointIndices = this.generateCheckpointIndices(difficulty);
+    const totalStars = Math.max(1, Math.round(this.platforms.length * GAME_CONFIG.generation.starsPerPlatformRatio));
+    const collectiblePositions = this.generateCollectiblePositions(totalStars);
 
     return {
       platforms: this.platforms,
       placements: this.placements,
       checkpointIndices,
-      totalStars: Math.max(1, Math.round(this.platforms.length * GAME_CONFIG.generation.starsPerPlatformRatio)),
+      collectiblePositions,
+      totalStars,
       themeSequence: themeSequence.map((theme) => theme.name),
     };
   }

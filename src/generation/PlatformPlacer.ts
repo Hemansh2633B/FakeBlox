@@ -36,6 +36,12 @@ export class PlatformPlacer {
     if (difficulty === 'extreme') return GAME_CONFIG.generation.maxGapDistanceExtreme;
     return GAME_CONFIG.generation.maxGapDistanceNormal;
   }
+  private getMinWidthForDifficulty(difficulty: string): number {
+    if (difficulty === 'easy') return GAME_CONFIG.generation.minPlatformWidthEasy;
+    if (difficulty === 'hard') return GAME_CONFIG.generation.minPlatformWidthHard;
+    if (difficulty === 'extreme') return GAME_CONFIG.generation.minPlatformWidthExtreme;
+    return GAME_CONFIG.generation.minPlatformWidthNormal;
+  }
 
   private getMinWidthForDifficulty(difficulty: Difficulty): number {
     if (difficulty === 'easy') return 3.0;
@@ -70,27 +76,11 @@ export class PlatformPlacer {
     for (let i = 1; i < count; i++) {
       const sectionIndex = Math.floor(i / sectionSize);
       const theme = themes[sectionIndex % themes.length];
-      const progress = i / Math.max(1, count - 1);
-      const isRestArea = this.shouldCreateRestArea(i);
-      const dynamicGapMax = THREE.MathUtils.lerp(
-        GAME_CONFIG.generation.minGapDistance + 0.5,
-        maxGap,
-        progress,
-      );
-      const horizontalGap = isRestArea
-        ? this.rng.nextRange(GAME_CONFIG.generation.minGapDistance, Math.max(GAME_CONFIG.generation.minGapDistance + 1, dynamicGapMax - 1))
-        : this.rng.nextRange(GAME_CONFIG.generation.minGapDistance, dynamicGapMax);
-      const verticalGap = isRestArea
-        ? this.rng.nextRange(-1, 1)
-        : this.rng.nextRange(-3, GAME_CONFIG.generation.maxUpwardGap);
-      const lateralOffset = isRestArea ? this.rng.nextRange(-1.5, 1.5) : this.rng.nextRange(-5, 5);
-
-      const width = isRestArea
-        ? this.rng.nextRange(4, 6.5)
-        : this.rng.nextRange(minWidth, GAME_CONFIG.generation.maxPlatformWidth);
-      const depth = isRestArea
-        ? this.rng.nextRange(4, 6)
-        : this.rng.nextRange(GAME_CONFIG.generation.minPlatformDepth, GAME_CONFIG.generation.maxPlatformDepth);
+      const horizontalGap = this.rng.nextRange(GAME_CONFIG.generation.minGapDistance, maxGap);
+      const verticalGap = this.rng.nextRange(-2, GAME_CONFIG.generation.maxUpwardGap);
+      const lateralOffset = this.rng.nextRange(-5, 5);
+      const width = this.rng.nextRange(minWidth, GAME_CONFIG.generation.maxPlatformWidth);
+      const depth = this.rng.nextRange(GAME_CONFIG.generation.minPlatformDepth, GAME_CONFIG.generation.maxPlatformDepth);
       currentPos.x += lateralOffset;
       currentPos.y += verticalGap;
       currentPos.z += horizontalGap + depth / 2;
