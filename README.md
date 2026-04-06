@@ -209,6 +209,20 @@ Behavior:
 - storage budget target is capped at ~1MB by pruning oldest recent seeds
 - Settings menu includes **Reset All Data** with confirmation
 
+### Achievements (Implemented Core)
+
+Achievement definitions include icon + description and are persisted in `obbyGame_achievements`.
+Current trigger wiring includes:
+
+- `first_steps`, `speed_demon`, `speed_freak`, `collector`, `flawless`, `five_star`, `comeback_kid` on level completion
+- `daily_player` when completing a daily seed (`daily-*`)
+- `mountaineer` when unique completed seeds reach 10
+- `dedicated` when total playtime reaches 1 hour
+- `persistent` when total deaths reaches 100
+- `shared_experience` when the player copies a seed
+
+Unlocked achievements show a top-right toast popup for ~4 seconds.
+
 ---
 
 ## 🗂️ Project Structure
