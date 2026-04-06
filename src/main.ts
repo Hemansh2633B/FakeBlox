@@ -7,11 +7,11 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const selectedEngine = params.get('engine');
 
-  if (selectedEngine === 'three') {
-    new Game(canvas);
+  if (selectedEngine === 'babylon') {
+    new BabylonGame(canvas);
     return;
   }
 
-  // Babylon.js is the default base engine.
-  new BabylonGame(canvas);
+  // Three.js is the default base engine.
+  new Game(canvas);
 });

@@ -8,6 +8,7 @@ export class PhysicsWorld {
   private isReady: boolean = false;
   private readonly pendingBodies: CANNON.Body[] = [];
   private readonly bodyMap: Map<CANNON.Body, RAPIER.RigidBody> = new Map();
+  private readonly reverseBodyMap: Map<number, CANNON.Body> = new Map();
   private readonly colliderMap: Map<CANNON.Body, RAPIER.Collider> = new Map();
   private readonly dynamicBodies: Set<CANNON.Body> = new Set();
   private readonly kinematicBodies: Set<CANNON.Body> = new Set();
@@ -26,8 +27,21 @@ export class PhysicsWorld {
           return;
         }
         const ray = new RAPIER.Ray(new RAPIER.Vector3(from.x, from.y, from.z), direction);
-        const hit = this.rapierWorld.castRay(ray, maxToi, true);
-        result.hasHit = !!hit;
+
+        // Use castRayAndGetNormal on the world directly
+        const hit = this.rapierWorld.castRayAndGetNormal(ray, maxToi, true);
+
+        if (hit !== null) {
+            result.hasHit = true;
+            (result as any).distance = hit.timeOfImpact;
+            const collider = hit.collider;
+            const rigidBody = collider.parent();
+            if (rigidBody) {
+                result.body = this.reverseBodyMap.get(rigidBody.handle) || null;
+            }
+        } else {
+            result.hasHit = false;
+        }
       },
     };
     void RAPIER.init().then(() => {
@@ -44,12 +58,14 @@ export class PhysicsWorld {
       const rigidBody = this.bodyMap.get(body);
       if (rigidBody) {
         rigidBody.setLinvel(new RAPIER.Vector3(body.velocity.x, body.velocity.y, body.velocity.z), true);
+        rigidBody.setAngvel(new RAPIER.Vector3(body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z), true);
       }
     }
     for (const body of this.kinematicBodies) {
       const rigidBody = this.bodyMap.get(body);
       if (rigidBody) {
         rigidBody.setNextKinematicTranslation(new RAPIER.Vector3(body.position.x, body.position.y, body.position.z));
+        rigidBody.setNextKinematicRotation(new RAPIER.Quaternion(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w));
       }
     }
 
@@ -59,8 +75,13 @@ export class PhysicsWorld {
     for (const [body, rigidBody] of this.bodyMap) {
       const pos = rigidBody.translation();
       const vel = rigidBody.linvel();
+      const rot = rigidBody.rotation();
+      const angVel = rigidBody.angvel();
+
       body.position.set(pos.x, pos.y, pos.z);
       body.velocity.set(vel.x, vel.y, vel.z);
+      body.quaternion.set(rot.x, rot.y, rot.z, rot.w);
+      body.angularVelocity.set(angVel.x, angVel.y, angVel.z);
     }
   }
 
@@ -77,7 +98,10 @@ export class PhysicsWorld {
     const collider = this.colliderMap.get(body);
     if (collider) this.rapierWorld.removeCollider(collider, true);
     const rigidBody = this.bodyMap.get(body);
-    if (rigidBody) this.rapierWorld.removeRigidBody(rigidBody);
+    if (rigidBody) {
+        this.reverseBodyMap.delete(rigidBody.handle);
+        this.rapierWorld.removeRigidBody(rigidBody);
+    }
     this.colliderMap.delete(body);
     this.bodyMap.delete(body);
     this.dynamicBodies.delete(body);
@@ -95,6 +119,7 @@ export class PhysicsWorld {
 
     const desc = new RAPIER.RigidBodyDesc(bodyType)
       .setTranslation(body.position.x, body.position.y, body.position.z)
+      .setRotation(new RAPIER.Quaternion(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w))
       .setCanSleep(false)
       .setLinearDamping(body.linearDamping ?? 0);
 
@@ -113,6 +138,7 @@ export class PhysicsWorld {
     colliderDesc.setRestitution(0);
     const collider = this.rapierWorld.createCollider(colliderDesc, rigidBody);
     this.bodyMap.set(body, rigidBody);
+    this.reverseBodyMap.set(rigidBody.handle, body);
     this.colliderMap.set(body, collider);
     if (body.type === CANNON.Body.DYNAMIC) this.dynamicBodies.add(body);
     if (body.type === CANNON.Body.KINEMATIC) this.kinematicBodies.add(body);

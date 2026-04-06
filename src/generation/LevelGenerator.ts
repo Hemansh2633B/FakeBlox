@@ -1,5 +1,7 @@
 import { SeededRNG } from './SeededRNG';
 import { PlatformPlacement, PlatformPlacer } from './PlatformPlacer';
+import { ObstaclePlacer } from './ObstaclePlacer';
+import { DecorationPlacer } from './DecorationPlacer';
 import { Scene } from '../game/Scene';
 import { PhysicsWorld } from '../systems/PhysicsWorld';
 import { Platform } from '../objects/Platform';
@@ -10,6 +12,7 @@ import { Difficulty } from '../utils/seed';
 
 export interface LevelMetadata {
   platforms: Platform[];
+  obstacles: any[];
   placements: PlatformPlacement[];
   checkpointIndices: number[];
   collectiblePositions: { x: number; y: number; z: number }[];
@@ -20,21 +23,27 @@ export interface LevelMetadata {
 export class LevelGenerator {
   private rng: SeededRNG;
   private placer: PlatformPlacer;
+  private obstaclePlacer: ObstaclePlacer;
   private themeManager: ThemeManager;
+  private decorationPlacer: DecorationPlacer;
   private validator: Validator;
   private platforms: Platform[] = [];
+  private obstacles: any[] = [];
   private placements: PlatformPlacement[] = [];
 
   constructor(private readonly scene: Scene, private readonly physics: PhysicsWorld, seed: string) {
     this.rng = new SeededRNG(seed);
     this.placer = new PlatformPlacer(scene, physics, this.rng);
+    this.obstaclePlacer = new ObstaclePlacer(scene, physics, this.rng);
     this.themeManager = new ThemeManager(this.rng);
+    this.decorationPlacer = new DecorationPlacer(scene);
     this.validator = new Validator();
   }
 
   public setSeed(seed: string): void {
     this.rng = new SeededRNG(seed);
     this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
+    this.obstaclePlacer = new ObstaclePlacer(this.scene, this.physics, this.rng);
     this.themeManager = new ThemeManager(this.rng);
   }
 
@@ -88,8 +97,11 @@ export class LevelGenerator {
     this.setSeed(seed);
     this.clear();
 
+    // Stage 1: Layout Graph (implied in PlatformPlacer)
     const count = this.getPlatformCount(difficulty);
     const themeSequence = this.themeManager.getRandomThemeSequence();
+
+    // Stage 2: Platform Placement
     let attempts = 0;
     do {
       if (attempts > 0) this.clear();
@@ -98,12 +110,30 @@ export class LevelGenerator {
       attempts += 1;
     } while (!this.validator.validateLevel(this.placements) && attempts < 10);
 
+    // Stage 3: Obstacle Placement
+    this.obstacles = this.obstaclePlacer.placeObstacles(this.placements, difficulty);
+
+    // Stage 4: Themes (Handled during Stage 2 & Stage 5)
+
+    // Stage 5: Decoration and Polish
+    this.placements.forEach((placement) => {
+      if (this.rng.nextBoolean(0.2)) {
+        this.decorationPlacer.placeDecoration(
+          placement.theme,
+          placement.position.x + this.rng.nextRange(-2, 2),
+          placement.position.y,
+          placement.position.z + this.rng.nextRange(-2, 2)
+        );
+      }
+    });
+
     const checkpointIndices = this.generateCheckpointIndices(difficulty);
     const totalStars = Math.max(1, Math.round(this.platforms.length * GAME_CONFIG.generation.starsPerPlatformRatio));
     const collectiblePositions = this.generateCollectiblePositions(totalStars);
 
     return {
       platforms: this.platforms,
+      obstacles: this.obstacles,
       placements: this.placements,
       checkpointIndices,
       collectiblePositions,
@@ -114,11 +144,17 @@ export class LevelGenerator {
 
   public clear(): void {
     this.platforms.forEach((platform) => platform.destroy());
+    this.obstacles.forEach((obstacle) => obstacle.destroy());
     this.platforms = [];
+    this.obstacles = [];
     this.placements = [];
   }
 
   public getPlatforms(): Platform[] {
     return this.platforms;
+  }
+
+  public getObstacles(): any[] {
+    return this.obstacles;
   }
 }
