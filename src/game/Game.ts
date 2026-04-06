@@ -19,6 +19,7 @@ import { EndScreen } from '../ui/EndScreen';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
 import { Checkpoint } from '../objects/Checkpoint';
+import { Difficulty, parseDifficulty } from '../utils/seed';
 
 export enum GameState { MENU, LOADING, PLAYING, PAUSED, END_SCREEN }
 
@@ -39,13 +40,14 @@ export class Game {
   }
   private startLevel(seed: string, difficulty: string): void {
     this.currentSeed = seed;
+    const parsedDifficulty: Difficulty = parseDifficulty(difficulty) ?? 'normal';
     this.deaths = 0;
     this.state = GameState.LOADING;
     this.mainMenu.setVisible(false);
     this.levelGenerator.clear();
     this.checkpoints.clear();
     this.collectibles.clear();
-    const level = this.levelGenerator.generate(seed, difficulty);
+    const level = this.levelGenerator.generate(seed, parsedDifficulty);
     this.totalStars = level.totalStars;
     level.checkpointIndices.forEach((platformIndex, idx) => {
       const placement = level.placements[platformIndex];

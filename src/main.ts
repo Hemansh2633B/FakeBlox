@@ -1,5 +1,17 @@
 import { Game } from './game/Game';
+import { BabylonGame } from './game/BabylonGame';
 window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-  if (canvas) new Game(canvas);
+  if (!canvas) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const selectedEngine = params.get('engine');
+
+  if (selectedEngine === 'three') {
+    new Game(canvas);
+    return;
+  }
+
+  // Babylon.js is the default base engine.
+  new BabylonGame(canvas);
 });
