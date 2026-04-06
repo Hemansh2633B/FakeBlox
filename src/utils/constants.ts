@@ -54,7 +54,10 @@ export const GAME_CONFIG = {
   // ============================================
   generation: {
     // Platform sizing
-    minPlatformWidth: 1.5,
+    minPlatformWidthEasy: 3.0,
+    minPlatformWidthNormal: 1.5,
+    minPlatformWidthHard: 1.0,
+    minPlatformWidthExtreme: 0.8,
     maxPlatformWidth: 8,
     minPlatformDepth: 1.5,
     maxPlatformDepth: 6,
@@ -79,10 +82,14 @@ export const GAME_CONFIG = {
 
     // Section sizing
     platformsPerSection: 12,         // average platforms per themed section
-    platformsPerCheckpointEasy: 7,
-    platformsPerCheckpointNormal: 9,
-    platformsPerCheckpointHard: 12,
-    platformsPerCheckpointExtreme: 18,
+    checkpointsPerEasyMin: 6,
+    checkpointsPerEasyMax: 8,
+    checkpointsPerNormalMin: 8,
+    checkpointsPerNormalMax: 10,
+    checkpointsPerHardMin: 10,
+    checkpointsPerHardMax: 14,
+    checkpointsPerExtremeMin: 15,
+    checkpointsPerExtremeMax: 20,
 
     // Obstacle density (per 10 platforms)
     obstacleDensityEasy: 1,
@@ -166,6 +173,9 @@ export const GAME_CONFIG = {
   checkpoints: {
     activationRadius: 2,
     respawnHeightOffset: 2,
+    deathYThreshold: -20,
+    respawnDelay: 0.95,
+    finishTriggerDistance: 2.5,
   },
 
   // ============================================
@@ -213,6 +223,8 @@ export const GAME_CONFIG = {
   ui: {
     achievementPopupDuration: 4.0,   // seconds
     hudUpdateInterval: 0.016,        // 60fps for timer display
+    hudNotificationDurationMs: 1400, // default HUD toast duration
+    collectiblePickupRadius: 1.5,
     touchJoystickSize: 120,          // pixels
     touchButtonSize: 80,             // pixels
   },
