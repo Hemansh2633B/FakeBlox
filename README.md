@@ -153,6 +153,29 @@ Star rating thresholds:
   - Mute All toggle
 - Audio settings are persisted with `SaveManager` and applied on startup.
 
+### Platform & Obstacle Spec Baseline
+
+The design ranges below are now codified in `GAME_CONFIG.platformSpecs` and `GAME_CONFIG.obstacleSpecs` for generator/obstacle systems to consume.
+
+- **Platform types**
+  - Normal platforms: dominant share by difficulty (roughly 40–80% band).
+  - Thin: width `0.5–1.0`, freq `5–15%`.
+  - Moving (linear): speed `2–6`, travel `3–10`, freq `10–25%`.
+  - Moving (circular): radius `3–8`, speed `0.5–2.0 rps`, freq `5–10%`.
+  - Rotating: `10–60 deg/s`, freq `5–15%`.
+  - Falling: trigger `0.5s`, warn `0.3–1.0s`, respawn `3–5s`.
+  - Bounce: `1.5–3.0x` jump, freq `3–10%`.
+  - Conveyor: speed `3–8`, freq `5–10%`.
+  - Appearing: visible `1–3s`, hidden `1–3s`, freq `3–8%`.
+  - Ice: friction multiplier `0.2`, primarily in ice theme.
+- **Obstacle types**
+  - Kill Brick: size `0.5–3.0`.
+  - Spinning Bar: length `6–12`, speed `30–120 deg/s`.
+  - Pendulum: diameter `2–4`, arc `90–180°`, period `2–5s`.
+  - Crusher: width `3–6`, cycle `1–2s open / 0.5s crush / 0.5s retract`.
+  - Laser: `1–3s on / 1–3s off`, warning `0.5s`.
+  - Wind Zone: force `5–15`, size `3–8`.
+
 ---
 
 ## 🗂️ Project Structure
