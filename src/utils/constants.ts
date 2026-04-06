@@ -109,6 +109,92 @@ export const GAME_CONFIG = {
   },
 
   // ============================================
+  // PLATFORM & OBSTACLE SPEC SHEETS
+  // ============================================
+  platformSpecs: {
+    normal: {
+      frequencyByDifficulty: {
+        easy: [0.6, 0.8],
+        normal: [0.5, 0.7],
+        hard: [0.45, 0.65],
+        extreme: [0.4, 0.55],
+      },
+    },
+    thin: {
+      widthRange: [0.5, 1.0],
+      frequencyRange: [0.05, 0.15],
+    },
+    movingLinear: {
+      speedRange: [2, 6],
+      travelDistanceRange: [3, 10],
+      frequencyRange: [0.1, 0.25],
+    },
+    movingCircular: {
+      radiusRange: [3, 8],
+      revolutionsPerSecondRange: [0.5, 2.0],
+      frequencyRange: [0.05, 0.1],
+    },
+    rotating: {
+      speedDegreesPerSecondRange: [10, 60],
+      frequencyRange: [0.05, 0.15],
+    },
+    falling: {
+      triggerDelayRange: [0.5, 0.5],
+      warningDurationRange: [0.3, 1.0],
+      respawnDelayRange: [3.0, 5.0],
+      frequencyRange: [0.05, 0.15],
+    },
+    bounce: {
+      bounceMultiplierRange: [1.5, 3.0],
+      frequencyRange: [0.03, 0.1],
+    },
+    conveyor: {
+      speedRange: [3, 8],
+      frequencyRange: [0.05, 0.1],
+    },
+    appearing: {
+      visibleDurationRange: [1.0, 3.0],
+      hiddenDurationRange: [1.0, 3.0],
+      frequencyRange: [0.03, 0.08],
+    },
+    ice: {
+      frictionMultiplier: 0.2,
+      frequencyInIceThemeRange: [0.1, 0.2],
+    },
+  },
+
+  obstacleSpecs: {
+    killBrick: {
+      sizeRange: [0.5, 3.0],
+    },
+    spinningBar: {
+      lengthRange: [6, 12],
+      thickness: 0.5,
+      speedDegreesPerSecondRange: [30, 120],
+    },
+    pendulum: {
+      diameterRange: [2, 4],
+      arcDegreesRange: [90, 180],
+      periodSecondsRange: [2, 5],
+    },
+    crusher: {
+      widthRange: [3, 6],
+      openDurationRange: [1.0, 2.0],
+      crushDuration: 0.5,
+      retractDuration: 0.5,
+    },
+    laser: {
+      onDurationRange: [1.0, 3.0],
+      offDurationRange: [1.0, 3.0],
+      warningDuration: 0.5,
+    },
+    windZone: {
+      forceRange: [5, 15],
+      sizeRange: [3, 8],
+    },
+  },
+
+  // ============================================
   // OBSTACLES
   // ============================================
   obstacles: {

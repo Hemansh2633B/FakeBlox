@@ -14,8 +14,9 @@ export class ScoreSystem {
     const targetTime = platformCount * GAME_CONFIG.scoring.targetTimePerPlatform;
     const timeBonus = Math.max(0, GAME_CONFIG.scoring.maxTimeBonus - (timeMs / targetTime) * GAME_CONFIG.scoring.maxTimeBonus);
     const deathPenalty = deaths * GAME_CONFIG.scoring.deathPenalty;
-    const starBonus = (starsCollected / totalStars) * GAME_CONFIG.scoring.maxCollectibleBonus;
-    return Math.floor(baseScore + timeBonus - deathPenalty + starBonus);
+    const collectibleRatio = totalStars > 0 ? (starsCollected / totalStars) : 0;
+    const collectibleBonus = collectibleRatio * GAME_CONFIG.scoring.maxCollectibleBonus;
+    return Math.floor(baseScore + timeBonus - deathPenalty + collectibleBonus);
   }
 
   public getStarRating(score: number): number {

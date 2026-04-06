@@ -10,6 +10,7 @@ export class CollectibleSystem {
       if (!collectible.isCollected) {
         const distance = this.player.model.mesh.position.distanceTo(collectible.mesh.position);
         if (distance < GAME_CONFIG.ui.collectiblePickupRadius) this.collect(collectible);
+        if (distance < 1.5) this.collect(collectible);
       }
     });
   }

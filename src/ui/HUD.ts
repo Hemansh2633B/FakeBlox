@@ -44,6 +44,7 @@ export class HUD {
   public updateStars(stars: number, total: number): void { this.starElement.innerText = `⭐ ${stars}/${total}`; }
   public updateSeed(seed: string): void { this.currentSeed = seed; this.seedElement.innerText = `Seed: ${seed}`; }
   public showNotification(message: string, ms: number = GAME_CONFIG.ui.hudNotificationDurationMs): void {
+  public showNotification(message: string, ms: number = 1400): void {
     this.notificationElement.innerText = message;
     this.notificationElement.style.opacity = '1';
     window.setTimeout(() => { this.notificationElement.style.opacity = '0'; }, ms);

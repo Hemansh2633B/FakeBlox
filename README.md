@@ -41,6 +41,15 @@ npm run dev
 npm run build
 ```
 
+
+`npm run build` runs full TypeScript checks plus Vite bundling (`tsc && vite build`).
+For quick Babylon-only bundle validation, you can still run:
+
+```bash
+npx vite build
+```
+
+
 ### 4) Preview production build
 
 ```bash
@@ -56,12 +65,14 @@ npm run preview
 - **Sprint:** `Shift`
 - **Look:** Mouse (click canvas to lock pointer)
 - **Pause:** `Esc`
+
 - **Debug Toggle:** `F3`
 
 ### Shareable URL Params
 
 - `?seed=hello&difficulty=normal` loads preset run settings
 - `?debug=true` starts with debug overlay enabled
+
 
 ---
 
@@ -106,11 +117,122 @@ Final score combines:
 - Death penalty
 - Collectible bonus
 
+Formula used:
+
+```text
+Base Score = 10000
+Time Bonus = max(0, 5000 - (completionTime / targetTime) * 5000)
+targetTime = platformCount * 3 seconds
+Death Penalty = deaths * 100
+Collectible Bonus = (starsCollected / totalStars) * 3000
+Final Score = Base Score + Time Bonus - Death Penalty + Collectible Bonus
+```
+
 Star rating thresholds:
 
 - ⭐⭐⭐ at **12,000+**
 - ⭐⭐⭐⭐ at **15,000+**
 - ⭐⭐⭐⭐⭐ at **17,000+**
+
+- ⭐⭐ at **8,000+**
+- ⭐ for completing the level
+
+### Daily Challenge (UTC)
+
+- Daily challenge seed is derived from UTC date + fixed salt and hashed for deterministic global parity.
+- Difficulty is intended to be locked to `normal`.
+- Badge format: `📅 Daily Challenge — <Month Day, Year>` (UTC date).
+
+### Endless Mode (Design Direction)
+
+- Generation is chunk-based and intended to stream forward indefinitely.
+- Difficulty ramps up over time.
+- No finish line; focus metrics are distance and stars collected.
+- Checkpoints continue periodically for non-extreme sections.
+
+### Audio Design (Current Integration)
+
+- `AudioManager` now pre-registers gameplay/UI SFX IDs for:
+  - movement/player states: `jump`, `land_soft`, `land_hard`, `death`, `respawn`, `bounce`
+  - progression: `checkpoint`, `collectible`, `level_complete`
+  - obstacle/environment loops: `moving_platform`, `kill_brick_hum`, `spinning_bar`, `laser_charge`, `laser_fire`, `conveyor`
+  - UI/countdown: `button_hover`, `button_click`, `countdown_tick`, `countdown_go`
+- Settings menu supports:
+  - Master Volume (0–100%)
+  - Music Volume (0–100%)
+  - SFX Volume (0–100%)
+  - Mute All toggle
+- Audio settings are persisted with `SaveManager` and applied on startup.
+
+### Platform & Obstacle Spec Baseline
+
+The design ranges below are now codified in `GAME_CONFIG.platformSpecs` and `GAME_CONFIG.obstacleSpecs` for generator/obstacle systems to consume.
+
+- **Platform types**
+  - Normal platforms: dominant share by difficulty (roughly 40–80% band).
+  - Thin: width `0.5–1.0`, freq `5–15%`.
+  - Moving (linear): speed `2–6`, travel `3–10`, freq `10–25%`.
+  - Moving (circular): radius `3–8`, speed `0.5–2.0 rps`, freq `5–10%`.
+  - Rotating: `10–60 deg/s`, freq `5–15%`.
+  - Falling: trigger `0.5s`, warn `0.3–1.0s`, respawn `3–5s`.
+  - Bounce: `1.5–3.0x` jump, freq `3–10%`.
+  - Conveyor: speed `3–8`, freq `5–10%`.
+  - Appearing: visible `1–3s`, hidden `1–3s`, freq `3–8%`.
+  - Ice: friction multiplier `0.2`, primarily in ice theme.
+- **Obstacle types**
+  - Kill Brick: size `0.5–3.0`.
+  - Spinning Bar: length `6–12`, speed `30–120 deg/s`.
+  - Pendulum: diameter `2–4`, arc `90–180°`, period `2–5s`.
+  - Crusher: width `3–6`, cycle `1–2s open / 0.5s crush / 0.5s retract`.
+  - Laser: `1–3s on / 1–3s off`, warning `0.5s`.
+  - Wind Zone: force `5–15`, size `3–8`.
+
+### Solvability Validation Rules (Implemented Baseline)
+
+`LevelGenerator` now runs a `Validator` pass and retries generation up to 10 attempts if rules fail.
+
+- Horizontal gap cap: `≤ 8.1` units
+- Upward gap cap: `≤ 3.25` units
+- Downward gap cap: `≤ 20` units
+- Sequence restrictions:
+  - no falling → falling
+  - no falling → appearing
+  - no ice → thin
+  - no bounce → falling
+- Rest-area cadence validation: difficult mechanics are expected in windows of 5–8 before next rest platform
+
+### Data Persistence (localStorage)
+
+`SaveManager` now persists and restores these keys with corruption-safe parsing + default fallback:
+
+- `obbyGame_settings`
+- `obbyGame_stats`
+- `obbyGame_bestRuns`
+- `obbyGame_recentSeeds`
+- `obbyGame_achievements`
+
+Behavior:
+
+- settings auto-save when changed in Settings menu
+- best runs save on completion only if better than existing run
+- stats can be incremented on death/collection/completion
+- corrupted JSON is automatically discarded and replaced by defaults
+- storage budget target is capped at ~1MB by pruning oldest recent seeds
+- Settings menu includes **Reset All Data** with confirmation
+
+### Achievements (Implemented Core)
+
+Achievement definitions include icon + description and are persisted in `obbyGame_achievements`.
+Current trigger wiring includes:
+
+- `first_steps`, `speed_demon`, `speed_freak`, `collector`, `flawless`, `five_star`, `comeback_kid` on level completion
+- `daily_player` when completing a daily seed (`daily-*`)
+- `mountaineer` when unique completed seeds reach 10
+- `dedicated` when total playtime reaches 1 hour
+- `persistent` when total deaths reaches 100
+- `shared_experience` when the player copies a seed
+
+Unlocked achievements show a top-right toast popup for ~4 seconds.
 
 ---
 
@@ -144,7 +266,13 @@ src/
 - Best runs are stored locally in-browser.
 - Seed sharing is supported in the HUD with a copy button.
 - This is a prototype codebase focused on fast gameplay iteration.
+
 - Full QA matrix lives in `docs/TESTING_CHECKLIST.md`.
+=======
+- Babylon is the default runtime (`src/game/BabylonGame.ts`) while legacy Three.js systems are still present for migration compatibility.
+- Babylon runtime uses the **Rapier physics engine** (`@dimforge/rapier3d-compat`) as a required dependency for gameplay simulation.
+- For subpath/static hosting, Vite is configured with `base: './'` so built assets resolve with relative URLs.
+
 
 ---
 
@@ -159,4 +287,5 @@ src/
 
 ## 📄 License
 
-Currently unlicensed / internal prototype. Add a license before public distribution.
+MIT License © 2026 Himanshu Kant Choursiya. See `LICENSE`.
+
