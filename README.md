@@ -56,6 +56,12 @@ npm run preview
 - **Sprint:** `Shift`
 - **Look:** Mouse (click canvas to lock pointer)
 - **Pause:** `Esc`
+- **Debug Toggle:** `F3`
+
+### Shareable URL Params
+
+- `?seed=hello&difficulty=normal` loads preset run settings
+- `?debug=true` starts with debug overlay enabled
 
 ---
 

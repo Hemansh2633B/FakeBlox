@@ -18,15 +18,22 @@ import { PauseMenu } from '../ui/PauseMenu';
 import { EndScreen } from '../ui/EndScreen';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
+import { DebugOverlay } from '../ui/DebugOverlay';
 import { Checkpoint } from '../objects/Checkpoint';
 import { Collectible } from '../objects/Collectible';
 import { GAME_CONFIG } from '../utils/constants';
 
 export enum GameState { MENU, LOADING, PLAYING, PAUSED, END_SCREEN }
+export interface GameLaunchOptions {
+  seed?: string;
+  difficulty?: string;
+  debug?: boolean;
+}
 
 export class Game {
   public scene: Scene; public physics: PhysicsWorld; public player: PlayerController; public camera: CameraController; public input: InputManager; public levelGenerator: LevelGenerator; public audio: AudioManager; public timer: TimerSystem; public score: ScoreSystem; public save: SaveManager; public checkpoints: CheckpointSystem; public collectibles: CollectibleSystem; public particles: ParticleManager; public achievements: AchievementSystem;
   public hud: HUD; public mainMenu: MainMenu; public pauseMenu: PauseMenu; public endScreen: EndScreen; public settingsMenu: SettingsMenu; public touchControls: TouchControls;
+  public debugOverlay: DebugOverlay;
   private state: GameState = GameState.MENU;
   private lastTime: number = 0;
   private currentSeed: string = 'hello';
@@ -37,16 +44,32 @@ export class Game {
   private isRespawning: boolean = false;
   private respawnTimer: number = 0;
   private finishPosition = { x: 0, y: 0, z: 0 };
+  private debugMode: boolean = false;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options: GameLaunchOptions = {}) {
+    this.currentSeed = options.seed || this.currentSeed;
+    this.currentDifficulty = options.difficulty || this.currentDifficulty;
+    this.debugMode = Boolean(options.debug);
     this.scene = new Scene(canvas); this.physics = new PhysicsWorld(); this.input = new InputManager(); this.audio = new AudioManager(); this.timer = new TimerSystem(); this.score = new ScoreSystem(); this.save = new SaveManager(); this.particles = new ParticleManager(this.scene.scene); this.achievements = new AchievementSystem();
     this.player = new PlayerController(this.scene.scene, this.physics, this.input); this.camera = new CameraController(this.scene.camera, this.player.model.mesh); this.levelGenerator = new LevelGenerator(this.scene, this.physics, this.currentSeed); this.checkpoints = new CheckpointSystem(this.player); this.collectibles = new CollectibleSystem(this.player);
     this.hud = new HUD(() => this.achievements.unlock('shared_experience')); this.mainMenu = new MainMenu(this.startLevel.bind(this)); this.pauseMenu = new PauseMenu(this.resumeGame.bind(this)); this.endScreen = new EndScreen(this.goToMenu.bind(this)); this.settingsMenu = new SettingsMenu((s) => this.audio.setMasterVolume(s.master)); this.touchControls = new TouchControls(() => {}, () => {}, () => {});
+    this.debugOverlay = new DebugOverlay(() => { this.player.body.position.y = GAME_CONFIG.checkpoints.deathYThreshold - 1; });
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'F3') {
+        this.debugMode = !this.debugMode;
+        this.debugOverlay.setVisible(this.debugMode);
+      }
+    });
     this.goToMenu(); this.animate = this.animate.bind(this); requestAnimationFrame(this.animate);
   }
   private startLevel(seed: string, difficulty: string): void {
     this.currentSeed = seed;
     this.currentDifficulty = difficulty;
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', this.currentSeed);
+    url.searchParams.set('difficulty', this.currentDifficulty);
+    if (this.debugMode) url.searchParams.set('debug', 'true');
+    window.history.replaceState({}, '', url.toString());
     this.deaths = 0;
     this.timerStarted = false;
     this.isRespawning = false;
@@ -146,6 +169,21 @@ export class Game {
       );
       if (finishDist < GAME_CONFIG.checkpoints.finishTriggerDistance) {
         this.completeLevel();
+      }
+      if (this.debugMode) {
+        this.debugOverlay.setVisible(true);
+        this.debugOverlay.update(deltaTime, {
+          x: this.player.body.position.x,
+          y: this.player.body.position.y,
+          z: this.player.body.position.z,
+          vx: this.player.body.velocity.x,
+          vy: this.player.body.velocity.y,
+          vz: this.player.body.velocity.z,
+          grounded: this.player.getGroundedState(),
+          coyote: this.player.getCoyoteTimeLeft(),
+        });
+      } else {
+        this.debugOverlay.setVisible(false);
       }
     }
   }

@@ -119,4 +119,12 @@ export class PlayerController {
   public isInvincible(): boolean {
     return this.respawnInvincibilityLeft > 0;
   }
+
+  public getGroundedState(): boolean {
+    return this.isGrounded;
+  }
+
+  public getCoyoteTimeLeft(): number {
+    return Math.max(0, this.coyoteTimeLeft);
+  }
 }
