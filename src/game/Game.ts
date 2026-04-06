@@ -18,6 +18,7 @@ import { PauseMenu } from '../ui/PauseMenu';
 import { EndScreen } from '../ui/EndScreen';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
+import { Checkpoint } from '../objects/Checkpoint';
 
 export enum GameState { MENU, LOADING, PLAYING, PAUSED, END_SCREEN }
 
