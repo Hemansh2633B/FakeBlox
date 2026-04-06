@@ -9,6 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.33.0",
+    "@babylonjs/loaders": "^8.33.0",
+    "@dimforge/rapier3d-compat": "^0.19.3",
     "cannon-es": "^0.20.0",
     "howler": "^2.2.4",
     "three": "^0.183.2"

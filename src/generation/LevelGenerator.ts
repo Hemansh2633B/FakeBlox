@@ -6,6 +6,7 @@ import { Platform } from '../objects/Platform';
 import { GAME_CONFIG } from '../utils/constants';
 import { ThemeManager } from './ThemeManager';
 import { Validator } from './Validator';
+import { Difficulty } from '../utils/seed';
 
 export interface LevelMetadata {
   platforms: Platform[];
@@ -17,20 +18,20 @@ export interface LevelMetadata {
 }
 
 export class LevelGenerator {
+  private seed: string;
   private scene: Scene;
   private physics: PhysicsWorld;
-  private seed: string;
   private rng: SeededRNG;
   private placer: PlatformPlacer;
   private themeManager: ThemeManager;
   private validator: Validator;
   private platforms: Platform[] = [];
-  private placements: PlatformPlacement[] = [];
+  private scene: Scene;
+  private physics: PhysicsWorld;
 
   constructor(scene: Scene, physics: PhysicsWorld, seed: string) {
     this.scene = scene;
     this.physics = physics;
-    this.seed = seed;
     this.rng = new SeededRNG(seed);
     this.placer = new PlatformPlacer(scene, physics, this.rng);
     this.themeManager = new ThemeManager(this.rng);
@@ -44,14 +45,14 @@ export class LevelGenerator {
     this.themeManager = new ThemeManager(this.rng);
   }
 
-  private getPlatformCount(difficulty: string): number {
+  private getPlatformCount(difficulty: Difficulty): number {
     if (difficulty === 'easy') return GAME_CONFIG.generation.platformCountEasy;
     if (difficulty === 'hard') return GAME_CONFIG.generation.platformCountHard;
     if (difficulty === 'extreme') return GAME_CONFIG.generation.platformCountExtreme;
     return GAME_CONFIG.generation.platformCountNormal;
   }
 
-  private getMaxGapForDifficulty(difficulty: string): number {
+  private getMaxGapForDifficulty(difficulty: Difficulty): number {
     if (difficulty === 'easy') return GAME_CONFIG.generation.maxGapDistanceEasy;
     if (difficulty === 'hard') return GAME_CONFIG.generation.maxGapDistanceHard;
     if (difficulty === 'extreme') return GAME_CONFIG.generation.maxGapDistanceExtreme;
@@ -106,20 +107,13 @@ export class LevelGenerator {
     return positions;
   }
 
-  public generate(seed: string, difficulty: string = 'normal'): LevelMetadata {
+  public generate(seed: string, difficulty: Difficulty = 'normal'): LevelMetadata {
     this.clear();
-    this.seed = seed;
-    this.rng = new SeededRNG(this.seed);
-    this.themeManager = new ThemeManager(this.rng);
-    this.validator = new Validator();
-    this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
 
-    const count = this.getPlatformCount(difficulty);
-    const maxGap = this.getMaxGapForDifficulty(difficulty);
-    const maxValidatedGap = Math.min(
-      maxGap,
-      (GAME_CONFIG.player.sprintSpeed * 0.8) - GAME_CONFIG.generation.safetyMarginHorizontal,
-    );
+    let count: number = GAME_CONFIG.generation.platformCountNormal;
+    if (difficulty === 'easy') count = GAME_CONFIG.generation.platformCountEasy;
+    else if (difficulty === 'hard') count = GAME_CONFIG.generation.platformCountHard;
+    else if (difficulty === 'extreme') count = GAME_CONFIG.generation.platformCountExtreme;
 
     const themeSequence = this.themeManager.getRandomThemeSequence();
     let attempts = 0;
@@ -143,11 +137,13 @@ export class LevelGenerator {
       themeSequence: themeSequence.map((theme) => theme.name),
     };
   }
+
   public clear(): void {
-    this.platforms.forEach(p => p.destroy());
+    this.platforms.forEach((p) => p.destroy());
     this.platforms = [];
     this.placements = [];
   }
+
   public getPlatforms(): Platform[] {
     return this.platforms;
   }
