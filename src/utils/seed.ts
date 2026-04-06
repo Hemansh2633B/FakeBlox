@@ -1,34 +1,18 @@
-export const DAILY_SEED_SALT = 'OBBY_CHALLENGE';
+const DAILY_CHALLENGE_SALT = 'OBBY_CHALLENGE_V1';
 
-export interface SeedRouteConfig {
-  seed: string;
-  difficulty: string;
-  debug: boolean;
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'extreme';
+
+export function toUtcDateString(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
-const VALID_DIFFICULTIES = new Set(['easy', 'normal', 'hard', 'extreme']);
-
-export function parseRouteConfig(search: string): SeedRouteConfig {
-  const params = new URLSearchParams(search);
-  const seed = (params.get('seed') || 'hello').trim() || 'hello';
-  const difficultyRaw = (params.get('difficulty') || 'normal').toLowerCase();
-  const difficulty = VALID_DIFFICULTIES.has(difficultyRaw) ? difficultyRaw : 'normal';
-  const debug = params.get('debug') === 'true';
-  return { seed, difficulty, debug };
+export function getDailyChallengeSeed(date: Date = new Date()): string {
+  return `DAILY_${toUtcDateString(date)}_${DAILY_CHALLENGE_SALT}`;
 }
 
-export function toDailySeed(date: Date = new Date()): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `DAILY_${year}-${month}-${day}_${DAILY_SEED_SALT}`;
-}
-
-export function randomSeed(length = 10): string {
-  const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  let result = '';
-  for (let i = 0; i < length; i += 1) {
-    result += chars[Math.floor(Math.random() * chars.length)];
+export function parseDifficulty(input: string | null | undefined): Difficulty | null {
+  if (input === 'easy' || input === 'normal' || input === 'hard' || input === 'extreme') {
+    return input;
   }
-  return result;
+  return null;
 }

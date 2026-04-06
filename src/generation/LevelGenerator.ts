@@ -6,6 +6,7 @@ import { Platform } from '../objects/Platform';
 import { GAME_CONFIG } from '../utils/constants';
 import { ThemeManager } from './ThemeManager';
 import { Validator } from './Validator';
+import { Difficulty } from '../utils/seed';
 
 export interface LevelMetadata {
   platforms: Platform[];
@@ -43,18 +44,39 @@ export class LevelGenerator {
     this.themeManager = new ThemeManager(this.rng);
   }
 
-  public setSeed(seed: string): void {
-    this.seed = seed;
-    this.rng = new SeededRNG(seed);
-    this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
+  private getPlatformCount(difficulty: Difficulty): number {
+    if (difficulty === 'easy') return GAME_CONFIG.generation.platformCountEasy;
+    if (difficulty === 'hard') return GAME_CONFIG.generation.platformCountHard;
+    if (difficulty === 'extreme') return GAME_CONFIG.generation.platformCountExtreme;
+    return GAME_CONFIG.generation.platformCountNormal;
   }
 
-  public setSeed(seed: string): void {
-    this.rng = new SeededRNG(seed);
-    this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
+  private getMaxGapForDifficulty(difficulty: Difficulty): number {
+    if (difficulty === 'easy') return GAME_CONFIG.generation.maxGapDistanceEasy;
+    if (difficulty === 'hard') return GAME_CONFIG.generation.maxGapDistanceHard;
+    if (difficulty === 'extreme') return GAME_CONFIG.generation.maxGapDistanceExtreme;
+    return GAME_CONFIG.generation.maxGapDistanceNormal;
   }
 
-  public generate(difficulty: string = 'normal'): Platform[] {
+  private getCheckpointIntervalRange(difficulty: Difficulty): [number, number] {
+    if (difficulty === 'easy') return [6, 8];
+    if (difficulty === 'hard') return [10, 14];
+    if (difficulty === 'extreme') return [15, 20];
+    return [8, 10];
+  }
+
+  private buildCheckpointIndices(totalPlatforms: number, difficulty: Difficulty): number[] {
+    const [minInterval, maxInterval] = this.getCheckpointIntervalRange(difficulty);
+    const indices: number[] = [];
+    let current = this.rng.nextInt(minInterval, maxInterval);
+    while (current < totalPlatforms - 2) {
+      indices.push(current);
+      current += this.rng.nextInt(minInterval, maxInterval);
+    }
+    return indices;
+  }
+
+  public generate(seed: string, difficulty: Difficulty = 'normal'): LevelMetadata {
     this.clear();
 
     let count: number = GAME_CONFIG.generation.platformCountNormal;
@@ -62,8 +84,24 @@ export class LevelGenerator {
     else if (difficulty === 'hard') count = GAME_CONFIG.generation.platformCountHard;
     else if (difficulty === 'extreme') count = GAME_CONFIG.generation.platformCountExtreme;
 
-    this.platforms = this.placer.generateInitialPath(count);
-    return this.platforms;
+    const themeSequence = this.themeManager.getRandomThemeSequence();
+    let attempts = 0;
+    do {
+      if (attempts > 0) this.clear();
+      this.placements = this.placer.generateInitialPath(count, difficulty, themeSequence);
+      this.platforms = this.placements.map((placement) => placement.platform);
+      attempts += 1;
+    } while (!this.validator.validateLevel(this.placements, maxValidatedGap) && attempts < 5);
+
+    const checkpointIndices = this.buildCheckpointIndices(this.placements.length, difficulty);
+
+    return {
+      platforms: this.platforms,
+      placements: this.placements,
+      checkpointIndices,
+      totalStars: Math.max(1, Math.round(this.platforms.length * GAME_CONFIG.generation.starsPerPlatformRatio)),
+      themeSequence: themeSequence.map((theme) => theme.name),
+    };
   }
 
   public clear(): void {

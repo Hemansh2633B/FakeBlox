@@ -18,7 +18,8 @@ import { PauseMenu } from '../ui/PauseMenu';
 import { EndScreen } from '../ui/EndScreen';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
-import { parseRouteConfig } from '../utils/seed';
+import { Checkpoint } from '../objects/Checkpoint';
+import { Difficulty, parseDifficulty } from '../utils/seed';
 
 export enum GameState {
   MENU,
@@ -106,24 +107,29 @@ export class Game {
   }
 
   private startLevel(seed: string, difficulty: string): void {
-    this.currentSeed = seed.trim() || 'default';
-    this.currentDifficulty = difficulty;
-
+    this.currentSeed = seed;
+    const parsedDifficulty: Difficulty = parseDifficulty(difficulty) ?? 'normal';
+    this.deaths = 0;
     this.state = GameState.LOADING;
     this.mainMenu.setVisible(false);
 
     this.levelGenerator.clear();
     this.checkpoints.clear();
     this.collectibles.clear();
-
-    this.levelGenerator.setSeed(this.currentSeed);
-    this.levelGenerator.generate(difficulty);
-
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.set('seed', this.currentSeed);
-    nextUrl.searchParams.set('difficulty', difficulty);
-    window.history.replaceState({}, '', nextUrl.toString());
-
+    const level = this.levelGenerator.generate(seed, parsedDifficulty);
+    this.totalStars = level.totalStars;
+    level.checkpointIndices.forEach((platformIndex, idx) => {
+      const placement = level.placements[platformIndex];
+      const checkpoint = new Checkpoint(
+        this.scene.scene,
+        this.physics,
+        placement.position.x,
+        placement.position.y + 0.1,
+        placement.position.z,
+        idx + 1,
+      );
+      this.checkpoints.addCheckpoint(checkpoint);
+    });
     this.player.respawn(0, 5, 0);
     this.timer.reset();
     this.timer.start();

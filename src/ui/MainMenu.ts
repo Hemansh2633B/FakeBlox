@@ -1,4 +1,4 @@
-import { randomSeed, toDailySeed } from '../utils/seed';
+import { getDailyChallengeSeed, parseDifficulty, toUtcDateString } from '../utils/seed';
 
 export class MainMenu {
   private element: HTMLElement;
@@ -8,7 +8,8 @@ export class MainMenu {
   private randomSeedButton: HTMLButtonElement;
   private copySeedButton: HTMLButtonElement;
   private pasteSeedButton: HTMLButtonElement;
-  private dailyChallengeButton: HTMLButtonElement;
+  private dailyButton: HTMLButtonElement;
+  private dailyLabel: HTMLElement;
   private onPlay: (seed: string, difficulty: string) => void;
 
   constructor(onPlay: (seed: string, difficulty: string) => void) {
@@ -25,8 +26,8 @@ export class MainMenu {
           <button id="menu-copy-seed" type="button">📋 Copy</button>
           <button id="menu-paste-seed" type="button">📥 Paste</button>
         </div>
-
-        <label for="menu-difficulty">Difficulty:</label>
+        <div id="menu-daily-label" class="daily-label"></div>
+        <label>Difficulty:</label>
         <select id="menu-difficulty">
           <option value="easy">Easy</option>
           <option value="normal" selected>Normal</option>
@@ -41,10 +42,10 @@ export class MainMenu {
     this.seedInput = this.element.querySelector('#menu-seed') as HTMLInputElement;
     this.difficultySelect = this.element.querySelector('#menu-difficulty') as HTMLSelectElement;
     this.playButton = this.element.querySelector('#menu-play') as HTMLButtonElement;
-    this.randomSeedButton = this.element.querySelector('#menu-random-seed') as HTMLButtonElement;
-    this.copySeedButton = this.element.querySelector('#menu-copy-seed') as HTMLButtonElement;
-    this.pasteSeedButton = this.element.querySelector('#menu-paste-seed') as HTMLButtonElement;
-    this.dailyChallengeButton = this.element.querySelector('#menu-daily') as HTMLButtonElement;
+    this.randomSeedButton = this.element.querySelector('#menu-seed-random') as HTMLButtonElement;
+    this.pasteSeedButton = this.element.querySelector('#menu-seed-paste') as HTMLButtonElement;
+    this.dailyButton = this.element.querySelector('#menu-daily') as HTMLButtonElement;
+    this.dailyLabel = this.element.querySelector('#menu-daily-label') as HTMLElement;
 
     this.playButton.onclick = () => this.onPlay(this.seedInput.value.trim() || 'default', this.difficultySelect.value);
     this.randomSeedButton.onclick = () => {
@@ -64,29 +65,42 @@ export class MainMenu {
         this.seedInput.value = fromClipboard.trim();
       }
     };
-    this.dailyChallengeButton.onclick = () => {
-      const dailySeed = MainMenu.getDailySeedLabel();
-      this.seedInput.value = dailySeed;
+    this.dailyButton.onclick = () => {
+      this.seedInput.value = getDailyChallengeSeed();
       this.difficultySelect.value = 'normal';
-      this.onPlay(dailySeed, 'normal');
+      this.updateDailyLabel();
     };
 
+    this.applyQueryParams();
+    this.updateDailyLabel();
     document.getElementById('ui-container')?.appendChild(this.element);
     this.applyStyles();
   }
 
-  public setInitialValues(seed: string, difficulty: string): void {
-    this.seedInput.value = seed;
-    this.difficultySelect.value = difficulty;
+  private applyQueryParams(): void {
+    const params = new URLSearchParams(window.location.search);
+    const seedFromQuery = params.get('seed');
+    if (seedFromQuery && seedFromQuery.trim().length > 0) {
+      this.seedInput.value = seedFromQuery.trim();
+    }
+    const difficultyFromQuery = parseDifficulty(params.get('difficulty'));
+    if (difficultyFromQuery) {
+      this.difficultySelect.value = difficultyFromQuery;
+    }
   }
 
-  public static getDailySeedLabel(): string {
-    const todayIso = new Date().toISOString().slice(0, 10);
-    return `DAILY_${todayIso}_OBBY_CHALLENGE`;
+  private updateDailyLabel(): void {
+    const utcDate = toUtcDateString(new Date());
+    this.dailyLabel.textContent = `📅 Daily Challenge — ${utcDate} (UTC)`;
   }
 
-  private static createRandomSeed(): string {
-    return `seed_${Date.now().toString(36)}_${Math.floor(Math.random() * 10000)}`;
+  private generateRandomSeed(): string {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    let seed = 'seed_';
+    for (let i = 0; i < bytes.length; i++) seed += alphabet[bytes[i] % alphabet.length];
+    return seed;
   }
 
   private applyStyles(): void {
@@ -104,6 +118,13 @@ export class MainMenu {
       border: '4px solid #fff',
       boxShadow: '0 0 20px rgba(0,0,0,0.5)',
       pointerEvents: 'auto',
+    });
+    Object.assign(this.dailyLabel.style, {
+      margin: '10px 0 16px',
+      fontSize: '13px',
+      color: '#cce5ff',
+      opacity: '0.95',
+      minHeight: '18px',
     });
   }
 

@@ -15,6 +15,7 @@ export class Validator {
 
       const verticalDelta = current.position.y - prev.position.y;
       if (verticalDelta > GAME_CONFIG.generation.maxUpwardGap) return false;
+      if (verticalDelta < -GAME_CONFIG.generation.maxDownwardGap) return false;
     }
 
     return true;
