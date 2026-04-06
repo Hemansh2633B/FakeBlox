@@ -20,6 +20,8 @@ import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
 import { Checkpoint } from '../objects/Checkpoint';
 import { Collectible } from '../objects/Collectible';
+import { parseDifficulty } from '../utils/seed';
+import type { AudioSettings } from '../systems/AudioManager';
 
 export enum GameState {
   MENU,
@@ -76,7 +78,7 @@ export class Game {
     this.score = new ScoreSystem();
     this.save = new SaveManager();
     this.particles = new ParticleManager(this.scene.scene);
-    this.achievements = new AchievementSystem();
+    this.achievements = new AchievementSystem(this.save);
 
     this.player = new PlayerController(this.scene.scene, this.physics, this.input);
     this.camera = new CameraController(this.scene.camera, this.player.model.mesh);
@@ -84,12 +86,47 @@ export class Game {
     this.checkpoints = new CheckpointSystem(this.player);
     this.collectibles = new CollectibleSystem(this.player);
 
-    this.hud = new HUD();
+    this.hud = new HUD(() => {
+      const unlocked = this.achievements.onSeedCopied();
+      if (unlocked.length > 0) {
+        this.audio.playSound('checkpoint');
+      }
+    });
     this.mainMenu = new MainMenu(this.startLevel.bind(this));
     this.mainMenu.setInitialValues(this.currentSeed, this.currentDifficulty);
     this.pauseMenu = new PauseMenu(this.resumeGame.bind(this));
     this.endScreen = new EndScreen(this.goToMenu.bind(this));
-    this.settingsMenu = new SettingsMenu((s) => this.audio.setMasterVolume(s.master));
+    const persistedSettings = this.save.loadSettings();
+    const persistedAudio: AudioSettings = {
+      master: persistedSettings.masterVolume,
+      music: persistedSettings.musicVolume,
+      sfx: persistedSettings.sfxVolume,
+      muteAll: false,
+    };
+    this.audio.applySettings(persistedAudio);
+    this.settingsMenu = new SettingsMenu(
+      (settings) => {
+        this.audio.applySettings(settings);
+        this.save.saveSettings({
+          ...persistedSettings,
+          masterVolume: settings.master,
+          musicVolume: settings.music,
+          sfxVolume: settings.sfx,
+        });
+      },
+      () => {
+        this.save.resetAll();
+        const defaults = this.save.loadSettings();
+        this.audio.applySettings({
+          master: defaults.masterVolume,
+          music: defaults.musicVolume,
+          sfx: defaults.sfxVolume,
+          muteAll: false,
+        });
+        this.settingsMenu.setValues(this.audio.getSettings());
+      },
+    );
+    this.settingsMenu.setValues(this.audio.getSettings());
     this.touchControls = new TouchControls(() => {}, () => {}, () => {});
 
     this.goToMenu();
@@ -115,6 +152,11 @@ export class Game {
   private startLevel(seed: string, difficulty: string): void {
     this.currentSeed = seed;
     this.currentDifficulty = difficulty;
+    this.save.saveRecentSeed({
+      seed,
+      difficulty,
+      date: new Date().toISOString().slice(0, 10),
+    });
     this.deaths = 0;
     this.timerStarted = false;
     this.isRespawning = false;
@@ -125,6 +167,7 @@ export class Game {
     this.levelGenerator.clear();
     this.checkpoints.clear();
     this.collectibles.clear();
+    const parsedDifficulty = parseDifficulty(difficulty) ?? 'normal';
     const level = this.levelGenerator.generate(seed, parsedDifficulty);
     this.totalStars = level.totalStars;
     const finishPlacement = level.placements[level.placements.length - 1];
@@ -207,6 +250,9 @@ export class Game {
       if (this.input.isKeyDown('Escape')) { this.state = GameState.PAUSED; this.pauseMenu.setVisible(true); }
       if (this.player.body.position.y < -20 && !this.isRespawning) {
         this.deaths += 1;
+        this.save.incrementStats({ totalDeaths: 1 });
+        const stats = this.save.loadStats();
+        this.achievements.onDeath(stats.totalDeaths);
         this.isRespawning = true;
         this.respawnTimer = 0.95;
         this.audio.playSound('death');
@@ -242,8 +288,28 @@ export class Game {
       time: this.timer.getTime(),
       deaths: this.deaths,
       stars: this.collectibles.getCount(),
+      totalStars: this.totalStars,
       score,
+      rating,
+      date: new Date().toISOString(),
     });
+    this.save.incrementStats({
+      totalLevelsCompleted: 1,
+      totalStarsCollected: this.collectibles.getCount(),
+      totalPlayTimeMs: this.timer.getTime(),
+    });
+    const unlocked = this.achievements.onLevelCompleted({
+      seed: this.currentSeed,
+      completionTimeMs: this.timer.getTime(),
+      deaths: this.deaths,
+      stars: this.collectibles.getCount(),
+      totalStars: this.totalStars,
+      score,
+      rating,
+    });
+    if (unlocked.length > 0) {
+      this.hud.showNotification(`${unlocked[0].icon} ${unlocked[0].name} unlocked!`);
+    }
     this.endScreen.updateStats(
       this.timer.getFormattedTime(),
       this.deaths,
