@@ -138,6 +138,7 @@ src/
 - Best runs are stored locally in-browser.
 - Seed sharing is supported in the HUD with a copy button.
 - This is a prototype codebase focused on fast gameplay iteration.
+- Full QA matrix lives in `docs/TESTING_CHECKLIST.md`.
 
 ---
 
