@@ -1,3 +1,5 @@
+import { randomSeed, toDailySeed } from '../utils/seed';
+
 export class MainMenu {
   private element: HTMLElement;
   private seedInput: HTMLInputElement;

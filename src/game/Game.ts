@@ -18,8 +18,15 @@ import { PauseMenu } from '../ui/PauseMenu';
 import { EndScreen } from '../ui/EndScreen';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
+import { parseRouteConfig } from '../utils/seed';
 
-export enum GameState { MENU, LOADING, PLAYING, PAUSED, END_SCREEN }
+export enum GameState {
+  MENU,
+  LOADING,
+  PLAYING,
+  PAUSED,
+  END_SCREEN,
+}
 
 export class Game {
   public scene: Scene;
