@@ -16,6 +16,8 @@ export class PlayerController {
   private coyoteTimeLeft: number = 0;
   private jumpBufferLeft: number = 0;
   private respawnInvincibilityLeft: number = 0;
+  private platformVelocity: CANNON.Vec3 = new CANNON.Vec3();
+
   private setModelOpacity(opacity: number): void {
     this.model.mesh.traverse((child: THREE.Object3D) => {
       if (!(child instanceof THREE.Mesh)) return;
@@ -53,7 +55,7 @@ export class PlayerController {
     } else {
       this.setModelOpacity(1);
     }
-    this.updateGroundedState();
+    this.updateGroundedState(deltaTime);
     this.handleMovement(deltaTime, cameraRotationY);
     this.handleJump(deltaTime);
     this.model.mesh.position.copy(this.body.position as unknown as THREE.Vector3);
@@ -67,15 +69,25 @@ export class PlayerController {
     this.model.update(deltaTime, currentSpeed, currentSpeed > 0.1, this.isGrounded);
   }
 
-  private updateGroundedState(): void {
+  private updateGroundedState(deltaTime: number): void {
     const rayFrom = this.body.position;
     const rayTo = new CANNON.Vec3(rayFrom.x, rayFrom.y - GAME_CONFIG.player.capsuleRadius - GAME_CONFIG.player.groundCheckDistance, rayFrom.z);
     const raycastResult = new CANNON.RaycastResult();
     const rayOptions = { skipBackfaces: true };
     this.physics.world.raycastClosest(rayFrom, rayTo, rayOptions, raycastResult);
+
     this.isGrounded = raycastResult.hasHit;
-    if (this.isGrounded) this.coyoteTimeLeft = GAME_CONFIG.player.coyoteTime;
-    else this.coyoteTimeLeft -= 0.016;
+    if (this.isGrounded) {
+      this.coyoteTimeLeft = GAME_CONFIG.player.coyoteTime;
+      if (raycastResult.body) {
+        this.platformVelocity.copy(raycastResult.body.velocity);
+      } else {
+        this.platformVelocity.set(0, 0, 0);
+      }
+    } else {
+      this.coyoteTimeLeft -= deltaTime;
+      this.platformVelocity.set(0, 0, 0);
+    }
   }
 
   private handleMovement(deltaTime: number, cameraRotationY: number): void {
@@ -85,10 +97,13 @@ export class PlayerController {
     const decel = GAME_CONFIG.player.deceleration;
     const moveX = moveVector.x * Math.cos(cameraRotationY) + moveVector.z * Math.sin(cameraRotationY);
     const moveZ = moveVector.z * Math.cos(cameraRotationY) - moveVector.x * Math.sin(cameraRotationY);
-    const targetVelX = moveX * speed;
-    const targetVelZ = moveZ * speed;
-    const lerpFactor = (moveVector.x !== 0 || moveVector.z !== 0) ? accel : decel;
+
+    const targetVelX = moveX * speed + this.platformVelocity.x;
+    const targetVelZ = moveZ * speed + this.platformVelocity.z;
+
+    const lerpFactor = (moveX !== 0 || moveZ !== 0) ? accel : decel;
     const airControl = this.isGrounded ? 1 : GAME_CONFIG.player.airControlMultiplier;
+
     this.body.velocity.x = THREE.MathUtils.lerp(this.body.velocity.x, targetVelX, lerpFactor * airControl * deltaTime);
     this.body.velocity.z = THREE.MathUtils.lerp(this.body.velocity.z, targetVelZ, lerpFactor * airControl * deltaTime);
   }
@@ -97,7 +112,7 @@ export class PlayerController {
     if (this.input.isJump()) this.jumpBufferLeft = GAME_CONFIG.player.jumpBufferTime;
     else this.jumpBufferLeft -= deltaTime;
     if (this.jumpBufferLeft > 0 && this.coyoteTimeLeft > 0 && this.jumpCooldown <= 0) {
-      this.body.velocity.y = GAME_CONFIG.player.jumpForce;
+      this.body.velocity.y = GAME_CONFIG.player.jumpForce + this.platformVelocity.y;
       this.jumpCooldown = 0.2;
       this.coyoteTimeLeft = 0;
       this.jumpBufferLeft = 0;

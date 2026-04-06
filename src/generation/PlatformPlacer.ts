@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import { SeededRNG } from './SeededRNG';
 import { Platform } from '../objects/Platform';
+import { MovingPlatform } from '../objects/MovingPlatform';
+import { RotatingPlatform } from '../objects/RotatingPlatform';
+import { FallingPlatform } from '../objects/FallingPlatform';
+import { BouncePlatform } from '../objects/BouncePlatform';
+import { ConveyorPlatform } from '../objects/ConveyorPlatform';
+import { AppearingPlatform } from '../objects/AppearingPlatform';
+import { IcePlatform } from '../objects/IcePlatform';
 import { Scene } from '../game/Scene';
 import { PhysicsWorld } from '../systems/PhysicsWorld';
 import { GAME_CONFIG } from '../utils/constants';
@@ -39,8 +46,63 @@ export class PlatformPlacer {
     private readonly rng: SeededRNG,
   ) {}
 
-  private placePlatform(x: number, y: number, z: number, width: number, depth: number, color: number): Platform {
-    return new Platform(this.scene.scene, this.physics, x, y, z, width, depth, color);
+  private placePlatform(
+    type: PlatformType,
+    x: number,
+    y: number,
+    z: number,
+    width: number,
+    depth: number,
+    theme: Theme,
+  ): Platform {
+    const color = (type === 'spawn' || type === 'finish' || type === 'normal')
+      ? (type === 'spawn' ? theme.accentColor : theme.secondaryColor)
+      : theme.primaryColor;
+
+    switch (type) {
+      case 'moving_linear': {
+        const specs = GAME_CONFIG.platformSpecs.movingLinear;
+        const dist = this.rng.nextRange(specs.travelDistanceRange[0], specs.travelDistanceRange[1]);
+        const speed = this.rng.nextRange(specs.speedRange[0], specs.speedRange[1]);
+        const axis = this.rng.choice(['x', 'y', 'z']);
+        const endX = x + (axis === 'x' ? dist : 0);
+        const endY = y + (axis === 'y' ? dist : 0);
+        const endZ = z + (axis === 'z' ? dist : 0);
+        return new MovingPlatform(this.scene.scene, this.physics, x, y, z, width, depth, endX, endY, endZ, speed, color);
+      }
+      case 'rotating': {
+        const specs = GAME_CONFIG.platformSpecs.rotating;
+        const speed = this.rng.nextRange(specs.speedDegreesPerSecondRange[0], specs.speedDegreesPerSecondRange[1]) * (Math.PI / 180);
+        return new RotatingPlatform(this.scene.scene, this.physics, x, y, z, width, depth, speed, color);
+      }
+      case 'falling':
+        return new FallingPlatform(this.scene.scene, this.physics, x, y, z, width, depth, color);
+      case 'bounce': {
+        const specs = GAME_CONFIG.platformSpecs.bounce;
+        const multiplier = this.rng.nextRange(specs.bounceMultiplierRange[0], specs.bounceMultiplierRange[1]);
+        return new BouncePlatform(this.scene.scene, this.physics, x, y, z, width, depth, multiplier, color);
+      }
+      case 'conveyor': {
+        const specs = GAME_CONFIG.platformSpecs.conveyor;
+        const speed = this.rng.nextRange(specs.speedRange[0], specs.speedRange[1]);
+        const direction = new THREE.Vector3(0, 0, 1);
+        return new ConveyorPlatform(this.scene.scene, this.physics, x, y, z, width, depth, speed, direction, color);
+      }
+      case 'appearing': {
+        const specs = GAME_CONFIG.platformSpecs.appearing;
+        const vis = this.rng.nextRange(specs.visibleDurationRange[0], specs.visibleDurationRange[1]);
+        const hid = this.rng.nextRange(specs.hiddenDurationRange[0], specs.hiddenDurationRange[1]);
+        return new AppearingPlatform(this.scene.scene, this.physics, x, y, z, width, depth, vis, hid, color);
+      }
+      case 'ice':
+        return new IcePlatform(this.scene.scene, this.physics, x, y, z, width, depth, color);
+      case 'thin':
+      case 'spawn':
+      case 'normal':
+      case 'finish':
+      default:
+        return new Platform(this.scene.scene, this.physics, x, y, z, width, depth, color);
+    }
   }
 
   private getMaxGapForDifficulty(difficulty: Difficulty): number {
@@ -59,6 +121,7 @@ export class PlatformPlacer {
 
   private choosePlatformType(themeName: string): PlatformType {
     const roll = this.rng.next();
+
     if (roll < 0.08) return 'thin';
     if (roll < 0.2) return 'moving_linear';
     if (roll < 0.26) return 'moving_circular';
@@ -68,6 +131,7 @@ export class PlatformPlacer {
     if (roll < 0.54) return 'appearing';
     if (themeName.toLowerCase().includes('factory') && roll < 0.62) return 'conveyor';
     if (themeName.toLowerCase().includes('ice') && roll < 0.72) return 'ice';
+
     return 'normal';
   }
 
@@ -81,7 +145,7 @@ export class PlatformPlacer {
     let nextRestIn = this.rng.nextInt(5, 8);
 
     const spawnTheme = themes[0];
-    const spawnPlatform = this.placePlatform(0, 0, 0, 8, 8, spawnTheme.accentColor);
+    const spawnPlatform = this.placePlatform('spawn', 0, 0, 0, 8, 8, spawnTheme);
     placements.push({
       platform: spawnPlatform,
       position: spawnPlatform.mesh.position.clone(),
@@ -102,9 +166,14 @@ export class PlatformPlacer {
         ? 'finish'
         : (isRestArea ? 'normal' : this.choosePlatformType(theme.name));
 
-      const width = isRestArea || isFinal
+      let width = isRestArea || isFinal
         ? Math.max(4, this.rng.nextRange(4, GAME_CONFIG.generation.maxPlatformWidth))
         : this.rng.nextRange(minWidth, GAME_CONFIG.generation.maxPlatformWidth);
+
+      if (platformType === 'thin') {
+        width = this.rng.nextRange(GAME_CONFIG.platformSpecs.thin.widthRange[0], GAME_CONFIG.platformSpecs.thin.widthRange[1]);
+      }
+
       const depth = isRestArea || isFinal
         ? Math.max(4, this.rng.nextRange(4, GAME_CONFIG.generation.maxPlatformDepth))
         : this.rng.nextRange(GAME_CONFIG.generation.minPlatformDepth, GAME_CONFIG.generation.maxPlatformDepth);
@@ -119,8 +188,8 @@ export class PlatformPlacer {
       currentPos.x += lateralOffset;
       currentPos.y += verticalGap;
       currentPos.z += horizontalGap + depth / 2;
-      const color = (isRestArea || isFinal) ? theme.secondaryColor : theme.primaryColor;
-      const platform = this.placePlatform(currentPos.x, currentPos.y, currentPos.z, width, depth, color);
+
+      const platform = this.placePlatform(platformType, currentPos.x, currentPos.y, currentPos.z, width, depth, theme);
 
       placements.push({
         platform,

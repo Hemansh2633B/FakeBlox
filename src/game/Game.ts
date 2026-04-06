@@ -4,6 +4,7 @@ import { PlayerController } from '../player/PlayerController';
 import { CameraController } from '../player/CameraController';
 import { InputManager } from '../player/InputManager';
 import { LevelGenerator } from '../generation/LevelGenerator';
+import { EndlessGenerator } from '../generation/EndlessGenerator';
 import { AudioManager } from '../systems/AudioManager';
 import { TimerSystem } from '../systems/TimerSystem';
 import { ScoreSystem } from '../systems/ScoreSystem';
@@ -21,6 +22,7 @@ import { TouchControls } from '../ui/TouchControls';
 import { Checkpoint } from '../objects/Checkpoint';
 import { Collectible } from '../objects/Collectible';
 import { parseDifficulty } from '../utils/seed';
+import { GAME_CONFIG } from '../utils/constants';
 import type { AudioSettings } from '../systems/AudioManager';
 
 export enum GameState {
@@ -38,6 +40,7 @@ export class Game {
   public camera: CameraController;
   public input: InputManager;
   public levelGenerator: LevelGenerator;
+  public endlessGenerator: EndlessGenerator;
   public audio: AudioManager;
   public timer: TimerSystem;
   public score: ScoreSystem;
@@ -64,6 +67,9 @@ export class Game {
   private isRespawning: boolean = false;
   private respawnTimer: number = 0;
   private finishPosition = { x: 0, y: 0, z: 0 };
+  private isEndless: boolean = false;
+  private endlessActivePlatforms: any[] = [];
+  private endlessNextGenerateZ: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     const initialConfig = this.getInitialSeedConfig();
@@ -83,10 +89,11 @@ export class Game {
     this.player = new PlayerController(this.scene.scene, this.physics, this.input);
     this.camera = new CameraController(this.scene.camera, this.player.model.mesh);
     this.levelGenerator = new LevelGenerator(this.scene, this.physics, this.currentSeed);
+    this.endlessGenerator = new EndlessGenerator(this.scene, this.physics, this.currentSeed);
     this.checkpoints = new CheckpointSystem(this.player);
     this.collectibles = new CollectibleSystem(this.player);
 
-    this.hud = new HUD(() => {
+    this.hud = new HUD((_seed) => {
       const unlocked = this.achievements.onSeedCopied();
       if (unlocked.length > 0) {
         this.audio.playSound('checkpoint');
@@ -149,9 +156,10 @@ export class Game {
     };
   }
 
-  private startLevel(seed: string, difficulty: string): void {
+  private startLevel(seed: string, difficulty: string, endless: boolean = false): void {
     this.currentSeed = seed;
     this.currentDifficulty = difficulty;
+    this.isEndless = endless;
     this.save.saveRecentSeed({
       seed,
       difficulty,
@@ -167,42 +175,57 @@ export class Game {
     this.levelGenerator.clear();
     this.checkpoints.clear();
     this.collectibles.clear();
-    const parsedDifficulty = parseDifficulty(difficulty) ?? 'normal';
-    const level = this.levelGenerator.generate(seed, parsedDifficulty);
-    this.totalStars = level.totalStars;
-    const finishPlacement = level.placements[level.placements.length - 1];
-    this.finishPosition = {
-      x: finishPlacement.position.x,
-      y: finishPlacement.position.y,
-      z: finishPlacement.position.z,
-    };
-    level.checkpointIndices.forEach((platformIndex, idx) => {
-      const placement = level.placements[platformIndex];
-      const checkpoint = new Checkpoint(
-        this.scene.scene,
-        this.physics,
-        placement.position.x,
-        placement.position.y + 0.1,
-        placement.position.z,
-        idx + 1,
-      );
-      this.checkpoints.addCheckpoint(checkpoint);
-    });
-    level.collectiblePositions.forEach((position) => {
-      const collectible = new Collectible(
-        this.scene.scene,
-        this.physics,
-        position.x,
-        position.y,
-        position.z,
-      );
-      this.collectibles.addCollectible(collectible);
-    });
+    this.endlessActivePlatforms.forEach(p => p.destroy());
+    this.endlessActivePlatforms = [];
+
+    if (endless) {
+        this.endlessGenerator.reset(seed);
+        const chunk = this.endlessGenerator.generateChunk(difficulty as any);
+        this.endlessActivePlatforms = chunk;
+        this.totalStars = 0;
+        this.finishPosition = { x: 0, y: -999, z: -999 };
+        this.endlessNextGenerateZ = GAME_CONFIG.generation.endlessGenerateAheadDistance;
+    } else {
+        const parsedDifficulty = parseDifficulty(difficulty) ?? 'normal';
+        const level = this.levelGenerator.generate(seed, parsedDifficulty);
+        this.totalStars = level.totalStars;
+        const finishPlacement = level.placements[level.placements.length - 1];
+        this.finishPosition = {
+          x: finishPlacement.position.x,
+          y: finishPlacement.position.y,
+          z: finishPlacement.position.z,
+        };
+        level.checkpointIndices.forEach((platformIndex, idx) => {
+          const placement = level.placements[platformIndex];
+          const checkpoint = new Checkpoint(
+            this.scene.scene,
+            this.physics,
+            placement.position.x,
+            placement.position.y + 0.1,
+            placement.position.z,
+            idx + 1,
+            level.checkpointIndices.length,
+          );
+          this.checkpoints.addCheckpoint(checkpoint);
+        });
+        level.collectiblePositions.forEach((position) => {
+          const collectible = new Collectible(
+            this.scene.scene,
+            this.physics,
+            position.x,
+            position.y,
+            position.z,
+          );
+          this.collectibles.addCollectible(collectible);
+        });
+    }
+
     this.player.respawn(0, 5, 0);
     this.timer.reset();
     this.state = GameState.PLAYING;
     this.hud.setVisible(true);
     this.hud.updateSeed(this.currentSeed);
+    this.hud.updateDeaths(0);
   }
 
   private resumeGame(): void {
@@ -231,15 +254,38 @@ export class Game {
 
   private update(deltaTime: number): void {
     if (this.state === GameState.PLAYING) {
-      this.physics.update(deltaTime); this.player.update(deltaTime, this.camera.getRotationY()); this.camera.update(deltaTime, this.input.getMouseDelta()); this.timer.update();
+      this.physics.update(deltaTime);
+
+      this.player.update(deltaTime, this.camera.getRotationY());
+      this.camera.update(deltaTime, this.input.getMouseDelta());
+      this.timer.update();
+
+      if (this.isEndless) {
+          this.endlessActivePlatforms.forEach(o => o.update(deltaTime));
+          const playerZ = this.player.body.position.z;
+          if (playerZ > this.endlessNextGenerateZ - GAME_CONFIG.generation.endlessGenerateAheadDistance) {
+              const newChunk = this.endlessGenerator.generateChunk(this.currentDifficulty as any);
+              this.endlessActivePlatforms.push(...newChunk);
+              this.endlessNextGenerateZ += 100; // Approximate chunk size in units
+          }
+      } else {
+          this.levelGenerator.getPlatforms().forEach(p => p.update(deltaTime));
+          this.levelGenerator.getObstacles().forEach(o => o.update(deltaTime));
+      }
+
       const activatedCheckpoint = this.checkpoints.update();
       this.collectibles.update(deltaTime);
       this.particles.update(deltaTime);
-      this.hud.updateTimer(this.timer.getFormattedTime()); this.hud.updateStars(this.collectibles.getCount(), this.totalStars);
+
+      this.hud.updateTimer(this.timer.getFormattedTime());
+      this.hud.updateStars(this.collectibles.getCount(), this.totalStars);
+      this.hud.updateDeaths(this.deaths);
+
       if (activatedCheckpoint) {
         this.audio.playSound('checkpoint');
         this.hud.showNotification(`Checkpoint ${activatedCheckpoint.id}/${activatedCheckpoint.total} ✓`);
       }
+
       if (!this.timerStarted) {
         const move = this.input.getMovementVector();
         if (move.x !== 0 || move.z !== 0 || this.input.isJump()) {
@@ -247,7 +293,12 @@ export class Game {
           this.timerStarted = true;
         }
       }
-      if (this.input.isKeyDown('Escape')) { this.state = GameState.PAUSED; this.pauseMenu.setVisible(true); }
+
+      if (this.input.isKeyDown('Escape')) {
+        this.state = GameState.PAUSED;
+        this.pauseMenu.setVisible(true);
+      }
+
       if (this.player.body.position.y < -20 && !this.isRespawning) {
         this.deaths += 1;
         this.save.incrementStats({ totalDeaths: 1 });
@@ -257,6 +308,7 @@ export class Game {
         this.respawnTimer = 0.95;
         this.audio.playSound('death');
       }
+
       if (this.isRespawning) {
         this.respawnTimer -= deltaTime;
         if (this.respawnTimer <= 0) {
@@ -264,18 +316,21 @@ export class Game {
           this.isRespawning = false;
         }
       }
+
       const finishDist = Math.hypot(
         this.player.body.position.x - this.finishPosition.x,
         this.player.body.position.y - this.finishPosition.y,
         this.player.body.position.z - this.finishPosition.z,
       );
-      if (finishDist < 2.5) {
+      if (finishDist < 2.5 && !this.isEndless) {
         this.completeLevel();
       }
     }
   }
+
   private completeLevel(): void {
     this.timer.stop();
+    this.audio.playSound('level_complete');
     const score = this.score.calculateScore(
       this.timer.getTime(),
       this.deaths,
@@ -321,5 +376,8 @@ export class Game {
     this.endScreen.setVisible(true);
     this.state = GameState.END_SCREEN;
   }
-  private render(): void { this.scene.render(); }
+
+  private render(): void {
+    this.scene.render();
+  }
 }
