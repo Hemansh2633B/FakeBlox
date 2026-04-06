@@ -16,6 +16,7 @@ export interface LevelMetadata {
 }
 
 export class LevelGenerator {
+  private seed: string;
   private scene: Scene;
   private physics: PhysicsWorld;
   private rng: SeededRNG;
@@ -23,12 +24,11 @@ export class LevelGenerator {
   private themeManager: ThemeManager;
   private validator: Validator;
   private platforms: Platform[] = [];
-  private seed: string;
 
   constructor(scene: Scene, physics: PhysicsWorld, seed: string) {
+    this.seed = seed;
     this.scene = scene;
     this.physics = physics;
-    this.seed = seed;
     this.rng = new SeededRNG(seed);
     this.placer = new PlatformPlacer(scene, physics, this.rng);
     this.themeManager = new ThemeManager(this.rng);
@@ -42,51 +42,27 @@ export class LevelGenerator {
     this.themeManager = new ThemeManager(this.rng);
   }
 
-  private getPlatformCount(difficulty: string): number {
-    if (difficulty === 'easy') return GAME_CONFIG.generation.platformCountEasy;
-    if (difficulty === 'hard') return GAME_CONFIG.generation.platformCountHard;
-    if (difficulty === 'extreme') return GAME_CONFIG.generation.platformCountExtreme;
-    return GAME_CONFIG.generation.platformCountNormal;
-  }
-
-  private getMaxGapForDifficulty(difficulty: string): number {
-    if (difficulty === 'easy') return GAME_CONFIG.generation.maxGapDistanceEasy;
-    if (difficulty === 'hard') return GAME_CONFIG.generation.maxGapDistanceHard;
-    if (difficulty === 'extreme') return GAME_CONFIG.generation.maxGapDistanceExtreme;
-    return GAME_CONFIG.generation.maxGapDistanceNormal;
-  }
-
-  private getCheckpointInterval(difficulty: string): number {
-    if (difficulty === 'easy') return GAME_CONFIG.generation.platformsPerCheckpointEasy;
-    if (difficulty === 'hard') return GAME_CONFIG.generation.platformsPerCheckpointHard;
-    if (difficulty === 'extreme') return GAME_CONFIG.generation.platformsPerCheckpointExtreme;
-    return GAME_CONFIG.generation.platformsPerCheckpointNormal;
-  }
-
   public setSeed(seed: string): void {
     this.seed = seed;
-  }
-
-  public getSeed(): string {
-    return this.seed;
+    this.rng = new SeededRNG(seed);
+    this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
   }
 
   public generate(difficulty: string = 'normal'): Platform[] {
     this.clear();
-    this.rng = new SeededRNG(this.seed);
-    this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
+    this.setSeed(this.seed);
 
-    let count: number = Number(GAME_CONFIG.generation.platformCountNormal);
-    if (difficulty === 'easy') count = Number(GAME_CONFIG.generation.platformCountEasy);
-    else if (difficulty === 'hard') count = Number(GAME_CONFIG.generation.platformCountHard);
-    else if (difficulty === 'extreme') count = Number(GAME_CONFIG.generation.platformCountExtreme);
+    let count: number = GAME_CONFIG.generation.platformCountNormal;
+    if (difficulty === 'easy') count = GAME_CONFIG.generation.platformCountEasy;
+    else if (difficulty === 'hard') count = GAME_CONFIG.generation.platformCountHard;
+    else if (difficulty === 'extreme') count = GAME_CONFIG.generation.platformCountExtreme;
 
     this.platforms = this.placer.generateInitialPath(count);
     return this.platforms;
   }
 
   public clear(): void {
-    this.platforms.forEach((platform) => platform.destroy());
+    this.platforms.forEach((p) => p.destroy());
     this.platforms = [];
     this.placements = [];
   }

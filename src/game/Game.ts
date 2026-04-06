@@ -18,9 +18,15 @@ import { PauseMenu } from '../ui/PauseMenu';
 import { EndScreen } from '../ui/EndScreen';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
-import { Checkpoint } from '../objects/Checkpoint';
+import { parseRouteConfig } from '../utils/seed';
 
-export enum GameState { MENU, LOADING, PLAYING, PAUSED, END_SCREEN }
+export enum GameState {
+  MENU,
+  LOADING,
+  PLAYING,
+  PAUSED,
+  END_SCREEN,
+}
 
 export class Game {
   public scene: Scene;
@@ -43,11 +49,17 @@ export class Game {
   public endScreen: EndScreen;
   public settingsMenu: SettingsMenu;
   public touchControls: TouchControls;
+
   private state: GameState = GameState.MENU;
   private lastTime = 0;
-  private currentSeed = 'hello';
+  private currentSeed: string;
+  private currentDifficulty: string;
 
   constructor(canvas: HTMLCanvasElement) {
+    const routeConfig = parseRouteConfig(window.location.search);
+    this.currentSeed = routeConfig.seed;
+    this.currentDifficulty = routeConfig.difficulty;
+
     this.scene = new Scene(canvas);
     this.physics = new PhysicsWorld();
     this.input = new InputManager();
@@ -57,67 +69,58 @@ export class Game {
     this.save = new SaveManager();
     this.particles = new ParticleManager(this.scene.scene);
     this.achievements = new AchievementSystem();
+
     this.player = new PlayerController(this.scene.scene, this.physics, this.input);
     this.camera = new CameraController(this.scene.camera, this.player.model.mesh);
     this.levelGenerator = new LevelGenerator(this.scene, this.physics, this.currentSeed);
     this.checkpoints = new CheckpointSystem(this.player);
     this.collectibles = new CollectibleSystem(this.player);
+
     this.hud = new HUD();
-    this.mainMenu = new MainMenu(this.startLevel.bind(this));
+    this.mainMenu = new MainMenu(this.startLevel.bind(this), this.currentSeed, this.currentDifficulty);
     this.pauseMenu = new PauseMenu(this.resumeGame.bind(this));
     this.endScreen = new EndScreen(this.goToMenu.bind(this));
     this.settingsMenu = new SettingsMenu((s) => this.audio.setMasterVolume(s.master));
     this.touchControls = new TouchControls(() => {}, () => {}, () => {});
 
-    const params = new URLSearchParams(window.location.search);
-    const seedFromUrl = params.get('seed');
-    const difficultyFromUrl = params.get('difficulty');
-    if (seedFromUrl && seedFromUrl.trim()) {
-      this.currentSeed = seedFromUrl.trim();
-      this.mainMenu.setSeed(this.currentSeed);
+    if (routeConfig.debug) {
+      console.info('[FakeBlox] Debug mode enabled.');
     }
-    if (difficultyFromUrl) {
-      this.mainMenu.setDifficulty(difficultyFromUrl);
-    }
-
-    this.hud.setCopySeedHandler(() => {
-      void this.copyCurrentSeedToClipboard();
-    });
 
     this.goToMenu();
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
   }
 
-  private async copyCurrentSeedToClipboard(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(this.currentSeed);
-    } catch {
-      // Clipboard may be blocked depending on browser permissions.
-    }
-  }
-
   private startLevel(seed: string, difficulty: string): void {
     this.currentSeed = seed;
+    this.currentDifficulty = difficulty;
     this.state = GameState.LOADING;
     this.mainMenu.setVisible(false);
+
     this.levelGenerator.clear();
+    this.levelGenerator.setSeed(seed);
     this.checkpoints.clear();
     this.collectibles.clear();
-
-    this.levelGenerator.setSeed(seed);
     this.levelGenerator.generate(difficulty);
+
     this.player.respawn(0, 5, 0);
     this.timer.reset();
     this.timer.start();
+
+    this.syncUrl();
+
     this.state = GameState.PLAYING;
     this.hud.setVisible(true);
     this.hud.updateSeed(seed);
+  }
 
+  private syncUrl(): void {
     const params = new URLSearchParams(window.location.search);
-    params.set('seed', seed);
-    params.set('difficulty', difficulty);
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    params.set('seed', this.currentSeed);
+    params.set('difficulty', this.currentDifficulty);
+    const query = `?${params.toString()}`;
+    window.history.replaceState({}, '', query);
   }
 
   private resumeGame(): void {
@@ -152,12 +155,15 @@ export class Game {
       this.checkpoints.update();
       this.collectibles.update();
       this.particles.update(deltaTime);
+
       this.hud.updateTimer(this.timer.getFormattedTime());
       this.hud.updateStars(this.collectibles.getCount(), 43);
+
       if (this.input.isKeyDown('Escape')) {
         this.state = GameState.PAUSED;
         this.pauseMenu.setVisible(true);
       }
+
       if (this.player.body.position.y < -20) {
         this.checkpoints.respawnPlayer();
         this.audio.playSound('death');
