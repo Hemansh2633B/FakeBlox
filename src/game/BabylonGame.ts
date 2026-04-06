@@ -91,9 +91,15 @@ export class BabylonGame {
   }
 
   private async initializeRapier(shadows: ShadowGenerator): Promise<void> {
-    await RAPIER.init();
-    this.rapierWorld = new RAPIER.World(new RAPIER.Vector3(0, MOVEMENT.gravity, 0));
-    this.spawnWorldGeometry(shadows);
+    try {
+      await RAPIER.init();
+      this.rapierWorld = new RAPIER.World(new RAPIER.Vector3(0, MOVEMENT.gravity, 0));
+      this.spawnWorldGeometry(shadows);
+    } catch (error) {
+      console.error('Rapier failed to initialize:', error);
+      this.showEngineWarning();
+      throw error;
+    }
   }
 
   private setupInput(): void {
@@ -160,6 +166,23 @@ export class BabylonGame {
     );
 
     this.playerBinding = { mesh: playerRoot, body: playerBody };
+  }
+
+  private showEngineWarning(): void {
+    const warning = document.createElement('div');
+    warning.textContent = 'Rapier physics failed to load. Check your deployment static asset path.';
+    warning.style.position = 'fixed';
+    warning.style.bottom = '12px';
+    warning.style.left = '12px';
+    warning.style.padding = '10px 12px';
+    warning.style.background = 'rgba(15, 15, 20, 0.8)';
+    warning.style.border = '1px solid rgba(255, 180, 100, 0.9)';
+    warning.style.borderRadius = '8px';
+    warning.style.color = '#ffd1a0';
+    warning.style.fontFamily = 'sans-serif';
+    warning.style.fontSize = '13px';
+    warning.style.zIndex = '1000';
+    document.body.appendChild(warning);
   }
 
   private createBlockyPlayerVisual(parent: Mesh, shadows: ShadowGenerator): void {

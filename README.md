@@ -41,6 +41,13 @@ npm run dev
 npm run build
 ```
 
+> ⚠️ **Current status (April 2026):** `npm run build` runs `tsc && vite build` and currently fails due legacy TypeScript issues in the older Three.js generation/UI modules.  
+> If you only need a deployable bundle for the Babylon runtime, use:
+>
+> ```bash
+> npx vite build
+> ```
+
 ### 4) Preview production build
 
 ```bash
@@ -138,6 +145,9 @@ src/
 - Best runs are stored locally in-browser.
 - Seed sharing is supported in the HUD with a copy button.
 - This is a prototype codebase focused on fast gameplay iteration.
+- Babylon is the default runtime (`src/game/BabylonGame.ts`), while legacy Three.js systems are still present and currently the source of several strict TypeScript build errors.
+- Babylon runtime uses the **Rapier physics engine** (`@dimforge/rapier3d-compat`) as a required dependency for gameplay simulation.
+- For subpath/static hosting, Vite is configured with `base: './'` so built assets resolve with relative URLs.
 
 ---
 
@@ -152,4 +162,4 @@ src/
 
 ## 📄 License
 
-Currently unlicensed / internal prototype. Add a license before public distribution.
+MIT License © 2026 Himanshu Kant Choursiya. See `LICENSE`.
