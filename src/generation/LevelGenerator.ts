@@ -24,9 +24,10 @@ export class LevelGenerator {
   private themeManager: ThemeManager;
   private validator: Validator;
   private platforms: Platform[] = [];
+  private scene: Scene;
+  private physics: PhysicsWorld;
 
   constructor(scene: Scene, physics: PhysicsWorld, seed: string) {
-    this.seed = seed;
     this.scene = scene;
     this.physics = physics;
     this.rng = new SeededRNG(seed);
@@ -48,9 +49,13 @@ export class LevelGenerator {
     this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
   }
 
+  public setSeed(seed: string): void {
+    this.rng = new SeededRNG(seed);
+    this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
+  }
+
   public generate(difficulty: string = 'normal'): Platform[] {
     this.clear();
-    this.setSeed(this.seed);
 
     let count: number = GAME_CONFIG.generation.platformCountNormal;
     if (difficulty === 'easy') count = GAME_CONFIG.generation.platformCountEasy;

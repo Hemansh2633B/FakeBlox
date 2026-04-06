@@ -43,6 +43,7 @@ export class Game {
   public collectibles: CollectibleSystem;
   public particles: ParticleManager;
   public achievements: AchievementSystem;
+
   public hud: HUD;
   public mainMenu: MainMenu;
   public pauseMenu: PauseMenu;
@@ -52,13 +53,13 @@ export class Game {
 
   private state: GameState = GameState.MENU;
   private lastTime = 0;
-  private currentSeed: string;
-  private currentDifficulty: string;
+  private currentSeed = 'hello';
+  private currentDifficulty = 'normal';
 
   constructor(canvas: HTMLCanvasElement) {
-    const routeConfig = parseRouteConfig(window.location.search);
-    this.currentSeed = routeConfig.seed;
-    this.currentDifficulty = routeConfig.difficulty;
+    const initialConfig = this.getInitialSeedConfig();
+    this.currentSeed = initialConfig.seed;
+    this.currentDifficulty = initialConfig.difficulty;
 
     this.scene = new Scene(canvas);
     this.physics = new PhysicsWorld();
@@ -77,50 +78,59 @@ export class Game {
     this.collectibles = new CollectibleSystem(this.player);
 
     this.hud = new HUD();
-    this.mainMenu = new MainMenu(this.startLevel.bind(this), this.currentSeed, this.currentDifficulty);
+    this.mainMenu = new MainMenu(this.startLevel.bind(this));
+    this.mainMenu.setInitialValues(this.currentSeed, this.currentDifficulty);
     this.pauseMenu = new PauseMenu(this.resumeGame.bind(this));
     this.endScreen = new EndScreen(this.goToMenu.bind(this));
     this.settingsMenu = new SettingsMenu((s) => this.audio.setMasterVolume(s.master));
     this.touchControls = new TouchControls(() => {}, () => {}, () => {});
-
-    if (routeConfig.debug) {
-      console.info('[FakeBlox] Debug mode enabled.');
-    }
 
     this.goToMenu();
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
   }
 
+  private getInitialSeedConfig(): { seed: string; difficulty: string } {
+    const params = new URLSearchParams(window.location.search);
+    const urlSeed = params.get('seed')?.trim();
+    const urlDifficulty = params.get('difficulty')?.trim();
+
+    const difficulty = (urlDifficulty && ['easy', 'normal', 'hard', 'extreme'].includes(urlDifficulty))
+      ? urlDifficulty
+      : 'normal';
+
+    return {
+      seed: urlSeed || 'hello',
+      difficulty,
+    };
+  }
+
   private startLevel(seed: string, difficulty: string): void {
-    this.currentSeed = seed;
+    this.currentSeed = seed.trim() || 'default';
     this.currentDifficulty = difficulty;
+
     this.state = GameState.LOADING;
     this.mainMenu.setVisible(false);
 
     this.levelGenerator.clear();
-    this.levelGenerator.setSeed(seed);
     this.checkpoints.clear();
     this.collectibles.clear();
+
+    this.levelGenerator.setSeed(this.currentSeed);
     this.levelGenerator.generate(difficulty);
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set('seed', this.currentSeed);
+    nextUrl.searchParams.set('difficulty', difficulty);
+    window.history.replaceState({}, '', nextUrl.toString());
 
     this.player.respawn(0, 5, 0);
     this.timer.reset();
     this.timer.start();
 
-    this.syncUrl();
-
     this.state = GameState.PLAYING;
     this.hud.setVisible(true);
-    this.hud.updateSeed(seed);
-  }
-
-  private syncUrl(): void {
-    const params = new URLSearchParams(window.location.search);
-    params.set('seed', this.currentSeed);
-    params.set('difficulty', this.currentDifficulty);
-    const query = `?${params.toString()}`;
-    window.history.replaceState({}, '', query);
+    this.hud.updateSeed(this.currentSeed);
   }
 
   private resumeGame(): void {
@@ -130,6 +140,7 @@ export class Game {
 
   private goToMenu(): void {
     this.state = GameState.MENU;
+    this.mainMenu.setInitialValues(this.currentSeed, this.currentDifficulty);
     this.mainMenu.setVisible(true);
     this.hud.setVisible(false);
     this.pauseMenu.setVisible(false);
