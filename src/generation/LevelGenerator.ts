@@ -18,13 +18,12 @@ export interface LevelMetadata {
 export class LevelGenerator {
   private scene: Scene;
   private physics: PhysicsWorld;
-  private seed: string;
   private rng: SeededRNG;
   private placer: PlatformPlacer;
   private themeManager: ThemeManager;
   private validator: Validator;
   private platforms: Platform[] = [];
-  private placements: PlatformPlacement[] = [];
+  private seed: string;
 
   constructor(scene: Scene, physics: PhysicsWorld, seed: string) {
     this.scene = scene;
@@ -64,49 +63,34 @@ export class LevelGenerator {
     return GAME_CONFIG.generation.platformsPerCheckpointNormal;
   }
 
-  public generate(seed: string, difficulty: string = 'normal'): LevelMetadata {
-    this.clear();
+  public setSeed(seed: string): void {
     this.seed = seed;
+  }
+
+  public getSeed(): string {
+    return this.seed;
+  }
+
+  public generate(difficulty: string = 'normal'): Platform[] {
+    this.clear();
     this.rng = new SeededRNG(this.seed);
-    this.themeManager = new ThemeManager(this.rng);
-    this.validator = new Validator();
     this.placer = new PlatformPlacer(this.scene, this.physics, this.rng);
 
-    const count = this.getPlatformCount(difficulty);
-    const maxGap = this.getMaxGapForDifficulty(difficulty);
-    const maxValidatedGap = Math.min(
-      maxGap,
-      (GAME_CONFIG.player.sprintSpeed * 0.8) - GAME_CONFIG.generation.safetyMarginHorizontal,
-    );
+    let count: number = Number(GAME_CONFIG.generation.platformCountNormal);
+    if (difficulty === 'easy') count = Number(GAME_CONFIG.generation.platformCountEasy);
+    else if (difficulty === 'hard') count = Number(GAME_CONFIG.generation.platformCountHard);
+    else if (difficulty === 'extreme') count = Number(GAME_CONFIG.generation.platformCountExtreme);
 
-    const themeSequence = this.themeManager.getRandomThemeSequence();
-    let attempts = 0;
-    do {
-      if (attempts > 0) this.clear();
-      this.placements = this.placer.generateInitialPath(count, difficulty, themeSequence);
-      this.platforms = this.placements.map((placement) => placement.platform);
-      attempts += 1;
-    } while (!this.validator.validateLevel(this.placements, maxValidatedGap) && attempts < 5);
-
-    const checkpointInterval = this.getCheckpointInterval(difficulty);
-    const checkpointIndices: number[] = [];
-    for (let i = checkpointInterval; i < this.placements.length; i += checkpointInterval) {
-      checkpointIndices.push(i);
-    }
-
-    return {
-      platforms: this.platforms,
-      placements: this.placements,
-      checkpointIndices,
-      totalStars: Math.max(1, Math.round(this.platforms.length * GAME_CONFIG.generation.starsPerPlatformRatio)),
-      themeSequence: themeSequence.map((theme) => theme.name),
-    };
+    this.platforms = this.placer.generateInitialPath(count);
+    return this.platforms;
   }
+
   public clear(): void {
-    this.platforms.forEach(p => p.destroy());
+    this.platforms.forEach((platform) => platform.destroy());
     this.platforms = [];
     this.placements = [];
   }
+
   public getPlatforms(): Platform[] {
     return this.platforms;
   }
