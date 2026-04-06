@@ -6,6 +6,7 @@ export class MainMenu {
   private difficultySelect: HTMLSelectElement;
   private playButton: HTMLButtonElement;
   private randomSeedButton: HTMLButtonElement;
+  private copySeedButton: HTMLButtonElement;
   private pasteSeedButton: HTMLButtonElement;
   private dailyButton: HTMLButtonElement;
   private dailyLabel: HTMLElement;
@@ -15,14 +16,15 @@ export class MainMenu {
     this.onPlay = onPlay;
     this.element = document.createElement('div');
     this.element.id = 'main-menu';
-    this.element.innerHTML = `<h1>FAKEBLOX</h1>
+    this.element.innerHTML = `
+      <h1>FAKEBLOX</h1>
       <div class="menu-form">
-        <label>Seed:</label>
-        <input type="text" id="menu-seed" value="hello">
-        <div class="seed-actions">
-          <button id="menu-seed-random">Random Seed</button>
-          <button id="menu-seed-paste">Paste Seed</button>
-          <button id="menu-daily">Daily Challenge</button>
+        <label for="menu-seed">Seed:</label>
+        <input type="text" id="menu-seed" value="hello" maxlength="64">
+        <div class="menu-seed-actions">
+          <button id="menu-random-seed" type="button">🎲 Random</button>
+          <button id="menu-copy-seed" type="button">📋 Copy</button>
+          <button id="menu-paste-seed" type="button">📥 Paste</button>
         </div>
         <div id="menu-daily-label" class="daily-label"></div>
         <label>Difficulty:</label>
@@ -32,8 +34,11 @@ export class MainMenu {
           <option value="hard">Hard</option>
           <option value="extreme">Extreme</option>
         </select>
+
         <button id="menu-play">Play Now</button>
+        <button id="menu-daily" type="button">📅 Daily Challenge</button>
       </div>`;
+
     this.seedInput = this.element.querySelector('#menu-seed') as HTMLInputElement;
     this.difficultySelect = this.element.querySelector('#menu-difficulty') as HTMLSelectElement;
     this.playButton = this.element.querySelector('#menu-play') as HTMLButtonElement;
@@ -42,12 +47,23 @@ export class MainMenu {
     this.dailyButton = this.element.querySelector('#menu-daily') as HTMLButtonElement;
     this.dailyLabel = this.element.querySelector('#menu-daily-label') as HTMLElement;
 
-    this.playButton.onclick = () => this.onPlay(this.seedInput.value.trim() || 'hello', this.difficultySelect.value);
-    this.randomSeedButton.onclick = () => { this.seedInput.value = this.generateRandomSeed(); };
+    this.playButton.onclick = () => this.onPlay(this.seedInput.value.trim() || 'default', this.difficultySelect.value);
+    this.randomSeedButton.onclick = () => {
+      this.seedInput.value = MainMenu.createRandomSeed();
+      this.seedInput.focus();
+      this.seedInput.select();
+    };
+    this.copySeedButton.onclick = async () => {
+      const value = this.seedInput.value.trim() || 'default';
+      await navigator.clipboard.writeText(value);
+      this.copySeedButton.innerText = '✅ Copied';
+      window.setTimeout(() => (this.copySeedButton.innerText = '📋 Copy'), 1200);
+    };
     this.pasteSeedButton.onclick = async () => {
-      if (!navigator.clipboard?.readText) return;
-      const clipboardText = await navigator.clipboard.readText();
-      if (clipboardText.trim().length > 0) this.seedInput.value = clipboardText.trim();
+      const fromClipboard = await navigator.clipboard.readText();
+      if (fromClipboard.trim()) {
+        this.seedInput.value = fromClipboard.trim();
+      }
     };
     this.dailyButton.onclick = () => {
       this.seedInput.value = getDailyChallengeSeed();
@@ -94,7 +110,7 @@ export class MainMenu {
       left: '50%',
       transform: 'translate(-50%, -50%)',
       backgroundColor: 'rgba(0,0,0,0.8)',
-      padding: '40px',
+      padding: '28px',
       borderRadius: '20px',
       color: 'white',
       textAlign: 'center',
@@ -112,5 +128,7 @@ export class MainMenu {
     });
   }
 
-  public setVisible(visible: boolean): void { this.element.style.display = visible ? 'block' : 'none'; }
+  public setVisible(visible: boolean): void {
+    this.element.style.display = visible ? 'block' : 'none';
+  }
 }
