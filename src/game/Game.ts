@@ -20,6 +20,7 @@ import { SettingsMenu } from '../ui/SettingsMenu';
 import { TouchControls } from '../ui/TouchControls';
 import { Checkpoint } from '../objects/Checkpoint';
 import { Collectible } from '../objects/Collectible';
+import { parseDifficulty } from '../utils/seed';
 
 export enum GameState {
   MENU,
@@ -125,6 +126,7 @@ export class Game {
     this.levelGenerator.clear();
     this.checkpoints.clear();
     this.collectibles.clear();
+    const parsedDifficulty = parseDifficulty(difficulty) ?? 'normal';
     const level = this.levelGenerator.generate(seed, parsedDifficulty);
     this.totalStars = level.totalStars;
     const finishPlacement = level.placements[level.placements.length - 1];

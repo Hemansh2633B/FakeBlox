@@ -107,11 +107,37 @@ Final score combines:
 - Death penalty
 - Collectible bonus
 
+Formula used:
+
+```text
+Base Score = 10000
+Time Bonus = max(0, 5000 - (completionTime / targetTime) * 5000)
+targetTime = platformCount * 3 seconds
+Death Penalty = deaths * 100
+Collectible Bonus = (starsCollected / totalStars) * 3000
+Final Score = Base Score + Time Bonus - Death Penalty + Collectible Bonus
+```
+
 Star rating thresholds:
 
 - ⭐⭐⭐ at **12,000+**
 - ⭐⭐⭐⭐ at **15,000+**
 - ⭐⭐⭐⭐⭐ at **17,000+**
+- ⭐⭐ at **8,000+**
+- ⭐ for completing the level
+
+### Daily Challenge (UTC)
+
+- Daily challenge seed is derived from UTC date + fixed salt and hashed for deterministic global parity.
+- Difficulty is intended to be locked to `normal`.
+- Badge format: `📅 Daily Challenge — <Month Day, Year>` (UTC date).
+
+### Endless Mode (Design Direction)
+
+- Generation is chunk-based and intended to stream forward indefinitely.
+- Difficulty ramps up over time.
+- No finish line; focus metrics are distance and stars collected.
+- Checkpoints continue periodically for non-extreme sections.
 
 ---
 
