@@ -41,12 +41,12 @@ npm run dev
 npm run build
 ```
 
-> ⚠️ **Current status (April 2026):** `npm run build` runs `tsc && vite build` and currently fails due legacy TypeScript issues in the older Three.js generation/UI modules.  
-> If you only need a deployable bundle for the Babylon runtime, use:
->
-> ```bash
-> npx vite build
-> ```
+`npm run build` runs full TypeScript checks plus Vite bundling (`tsc && vite build`).
+For quick Babylon-only bundle validation, you can still run:
+
+```bash
+npx vite build
+```
 
 ### 4) Preview production build
 
@@ -175,6 +175,20 @@ The design ranges below are now codified in `GAME_CONFIG.platformSpecs` and `GAM
   - Crusher: width `3–6`, cycle `1–2s open / 0.5s crush / 0.5s retract`.
   - Laser: `1–3s on / 1–3s off`, warning `0.5s`.
   - Wind Zone: force `5–15`, size `3–8`.
+
+### Solvability Validation Rules (Implemented Baseline)
+
+`LevelGenerator` now runs a `Validator` pass and retries generation up to 10 attempts if rules fail.
+
+- Horizontal gap cap: `≤ 8.1` units
+- Upward gap cap: `≤ 3.25` units
+- Downward gap cap: `≤ 20` units
+- Sequence restrictions:
+  - no falling → falling
+  - no falling → appearing
+  - no ice → thin
+  - no bounce → falling
+- Rest-area cadence validation: difficult mechanics are expected in windows of 5–8 before next rest platform
 
 ---
 

@@ -42,14 +42,15 @@ export class MainMenu {
     this.seedInput = this.element.querySelector('#menu-seed') as HTMLInputElement;
     this.difficultySelect = this.element.querySelector('#menu-difficulty') as HTMLSelectElement;
     this.playButton = this.element.querySelector('#menu-play') as HTMLButtonElement;
-    this.randomSeedButton = this.element.querySelector('#menu-seed-random') as HTMLButtonElement;
-    this.pasteSeedButton = this.element.querySelector('#menu-seed-paste') as HTMLButtonElement;
+    this.randomSeedButton = this.element.querySelector('#menu-random-seed') as HTMLButtonElement;
+    this.copySeedButton = this.element.querySelector('#menu-copy-seed') as HTMLButtonElement;
+    this.pasteSeedButton = this.element.querySelector('#menu-paste-seed') as HTMLButtonElement;
     this.dailyButton = this.element.querySelector('#menu-daily') as HTMLButtonElement;
     this.dailyLabel = this.element.querySelector('#menu-daily-label') as HTMLElement;
 
     this.playButton.onclick = () => this.onPlay(this.seedInput.value.trim() || 'default', this.difficultySelect.value);
     this.randomSeedButton.onclick = () => {
-      this.seedInput.value = MainMenu.createRandomSeed();
+      this.seedInput.value = this.generateRandomSeed();
       this.seedInput.focus();
       this.seedInput.select();
     };
