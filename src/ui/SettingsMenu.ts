@@ -7,10 +7,13 @@ export class SettingsMenu {
   private readonly sfxVolSlider: HTMLInputElement;
   private readonly muteToggle: HTMLInputElement;
   private readonly closeButton: HTMLButtonElement;
+  private readonly resetDataButton: HTMLButtonElement;
   private readonly onSettingsChange: (settings: AudioSettings) => void;
+  private readonly onResetData?: () => void;
 
-  constructor(onSettingsChange: (settings: AudioSettings) => void) {
+  constructor(onSettingsChange: (settings: AudioSettings) => void, onResetData?: () => void) {
     this.onSettingsChange = onSettingsChange;
+    this.onResetData = onResetData;
     this.element = document.createElement('div');
     this.element.id = 'settings-menu';
     this.element.innerHTML = `
@@ -27,18 +30,25 @@ export class SettingsMenu {
           Mute All
         </label>
       </div>
+      <button id="settings-reset-data" type="button">Reset All Data</button>
       <button id="settings-close">Close Settings</button>
     `;
     this.masterVolSlider = this.element.querySelector('#settings-master') as HTMLInputElement;
     this.musicVolSlider = this.element.querySelector('#settings-music') as HTMLInputElement;
     this.sfxVolSlider = this.element.querySelector('#settings-sfx') as HTMLInputElement;
     this.muteToggle = this.element.querySelector('#settings-mute-all') as HTMLInputElement;
+    this.resetDataButton = this.element.querySelector('#settings-reset-data') as HTMLButtonElement;
     this.closeButton = this.element.querySelector('#settings-close') as HTMLButtonElement;
 
     this.masterVolSlider.oninput = () => this.updateSettings();
     this.musicVolSlider.oninput = () => this.updateSettings();
     this.sfxVolSlider.oninput = () => this.updateSettings();
     this.muteToggle.onchange = () => this.updateSettings();
+    this.resetDataButton.onclick = () => {
+      if (!this.onResetData) return;
+      const shouldReset = window.confirm('Reset all saved settings, stats, runs, seeds, and achievements?');
+      if (shouldReset) this.onResetData();
+    };
     this.closeButton.onclick = () => this.setVisible(false);
 
     document.getElementById('ui-container')?.appendChild(this.element);

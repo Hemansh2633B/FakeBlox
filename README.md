@@ -190,6 +190,25 @@ The design ranges below are now codified in `GAME_CONFIG.platformSpecs` and `GAM
   - no bounce → falling
 - Rest-area cadence validation: difficult mechanics are expected in windows of 5–8 before next rest platform
 
+### Data Persistence (localStorage)
+
+`SaveManager` now persists and restores these keys with corruption-safe parsing + default fallback:
+
+- `obbyGame_settings`
+- `obbyGame_stats`
+- `obbyGame_bestRuns`
+- `obbyGame_recentSeeds`
+- `obbyGame_achievements`
+
+Behavior:
+
+- settings auto-save when changed in Settings menu
+- best runs save on completion only if better than existing run
+- stats can be incremented on death/collection/completion
+- corrupted JSON is automatically discarded and replaced by defaults
+- storage budget target is capped at ~1MB by pruning oldest recent seeds
+- Settings menu includes **Reset All Data** with confirmation
+
 ---
 
 ## 🗂️ Project Structure
@@ -222,7 +241,7 @@ src/
 - Best runs are stored locally in-browser.
 - Seed sharing is supported in the HUD with a copy button.
 - This is a prototype codebase focused on fast gameplay iteration.
-- Babylon is the default runtime (`src/game/BabylonGame.ts`), while legacy Three.js systems are still present and currently the source of several strict TypeScript build errors.
+- Babylon is the default runtime (`src/game/BabylonGame.ts`) while legacy Three.js systems are still present for migration compatibility.
 - Babylon runtime uses the **Rapier physics engine** (`@dimforge/rapier3d-compat`) as a required dependency for gameplay simulation.
 - For subpath/static hosting, Vite is configured with `base: './'` so built assets resolve with relative URLs.
 

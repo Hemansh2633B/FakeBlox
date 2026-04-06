@@ -91,14 +91,36 @@ export class Game {
     this.mainMenu.setInitialValues(this.currentSeed, this.currentDifficulty);
     this.pauseMenu = new PauseMenu(this.resumeGame.bind(this));
     this.endScreen = new EndScreen(this.goToMenu.bind(this));
-    const persistedSettings = this.save.loadSettings() as AudioSettings | null;
-    if (persistedSettings) {
-      this.audio.applySettings(persistedSettings);
-    }
-    this.settingsMenu = new SettingsMenu((settings) => {
-      this.audio.applySettings(settings);
-      this.save.saveSettings(settings);
-    });
+    const persistedSettings = this.save.loadSettings();
+    const persistedAudio: AudioSettings = {
+      master: persistedSettings.masterVolume,
+      music: persistedSettings.musicVolume,
+      sfx: persistedSettings.sfxVolume,
+      muteAll: false,
+    };
+    this.audio.applySettings(persistedAudio);
+    this.settingsMenu = new SettingsMenu(
+      (settings) => {
+        this.audio.applySettings(settings);
+        this.save.saveSettings({
+          ...persistedSettings,
+          masterVolume: settings.master,
+          musicVolume: settings.music,
+          sfxVolume: settings.sfx,
+        });
+      },
+      () => {
+        this.save.resetAll();
+        const defaults = this.save.loadSettings();
+        this.audio.applySettings({
+          master: defaults.masterVolume,
+          music: defaults.musicVolume,
+          sfx: defaults.sfxVolume,
+          muteAll: false,
+        });
+        this.settingsMenu.setValues(this.audio.getSettings());
+      },
+    );
     this.settingsMenu.setValues(this.audio.getSettings());
     this.touchControls = new TouchControls(() => {}, () => {}, () => {});
 
@@ -218,6 +240,7 @@ export class Game {
       if (this.input.isKeyDown('Escape')) { this.state = GameState.PAUSED; this.pauseMenu.setVisible(true); }
       if (this.player.body.position.y < -20 && !this.isRespawning) {
         this.deaths += 1;
+        this.save.incrementStats({ totalDeaths: 1 });
         this.isRespawning = true;
         this.respawnTimer = 0.95;
         this.audio.playSound('death');
@@ -253,7 +276,15 @@ export class Game {
       time: this.timer.getTime(),
       deaths: this.deaths,
       stars: this.collectibles.getCount(),
+      totalStars: this.totalStars,
       score,
+      rating,
+      date: new Date().toISOString(),
+    });
+    this.save.incrementStats({
+      totalLevelsCompleted: 1,
+      totalStarsCollected: this.collectibles.getCount(),
+      totalPlayTimeMs: this.timer.getTime(),
     });
     this.endScreen.updateStats(
       this.timer.getFormattedTime(),
