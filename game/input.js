@@ -12,7 +12,10 @@ export class InputManager {
     this.sprint = false;
     this.pause = false;
     this.reset = false;
+    this.toggleCameraMode = false;
+    this.toggleCameraModePressed = false;
     this._prevJump = false;
+    this._prevToggleCameraMode = false;
     this.locked = false;
     this.rightClickDown = false;
     this.shiftLocked = false;
@@ -156,8 +159,8 @@ export class InputManager {
   }
 
   update() {
-    this.camDelta.set(0, 0);
     this._prevJump = this.jump;
+    this._prevToggleCameraMode = this.toggleCameraMode;
 
     const mv = new THREE.Vector2();
     if (this.keys['KeyW'] || this.keys['ArrowUp']) mv.y += 1;
@@ -174,11 +177,14 @@ export class InputManager {
     this.sprint = !!(this.keys['ControlLeft'] || this.keys['KeyC'] || this.touchSprint);
     this.pause = !!this.keys['Escape'];
     this.reset = !!this.keys['KeyR'];
+    this.toggleCameraMode = !!(this.keys['KeyV'] || this.keys['KeyF']);
+    this.toggleCameraModePressed = this.toggleCameraMode && !this._prevToggleCameraMode;
 
     this.updateGamepad();
 
     this.keys['Escape'] = false;
     this.keys['KeyR'] = false;
+    this.camDelta.set(0, 0);
   }
 
   updateGamepad() {
