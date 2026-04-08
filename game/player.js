@@ -175,9 +175,34 @@ export function updatePlayer(game, dt) {
   }
   if (game.grounded) game.jumpHeld = false;
 
+  // Vine climbing support for hill sections
+  let onVine = false;
+  const vines = game.levelData?.vines || [];
+  for (let i = 0; i < vines.length; i++) {
+    const vine = vines[i];
+    const dx = game.playerPos.x - vine.pos.x;
+    const dz = game.playerPos.z - vine.pos.z;
+    const horizDist = Math.hypot(dx, dz);
+    const vineBottom = vine.pos.y - vine.height / 2 - 0.5;
+    const vineTop = vine.pos.y + vine.height / 2 + 0.5;
+    if (horizDist < 0.95 && game.playerPos.y >= vineBottom && game.playerPos.y <= vineTop) {
+      onVine = true;
+      break;
+    }
+  }
+
+  if (onVine && (inp.jump || inp.moveDir.y > 0.1)) {
+    game.playerVel.y = 8.5;
+    game.playerVel.x *= 0.96;
+    game.playerVel.z *= 0.96;
+    game.grounded = false;
+  }
+
   const grav = game.playerVel.y <= 0 ? P.gravity * P.fallGravMul : P.gravity;
   const spaceMul = game.currentTheme === 'space' ? 0.5 : 1.0;
-  game.playerVel.y += grav * spaceMul * dt;
+  if (!onVine || !inp.jump) {
+    game.playerVel.y += grav * spaceMul * dt;
+  }
   game.playerVel.y = Math.max(game.playerVel.y, -40); // terminal velocity
 
   const desiredMovement = new THREE.Vector3(game.playerVel.x * dt, game.playerVel.y * dt, game.playerVel.z * dt);
@@ -450,9 +475,7 @@ export function updateCheckpoints(game) {
       );
       game.showNotification(`✓ Checkpoint ${game.currentCheckpoint}/${cpIndices.length - 1}`);
 
-      const sectionSize = Math.ceil(data.platforms.length / data.themes.length);
-      const sectionIdx = Math.min(Math.floor(cpPlatIdx / sectionSize), data.themes.length - 1);
-      const newTheme = data.themes[sectionIdx];
+      const newTheme = platData.theme;
       if (newTheme !== game.currentTheme) {
         game.applyTheme(newTheme);
         audio.startMusic(newTheme);
