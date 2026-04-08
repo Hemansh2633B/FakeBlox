@@ -614,20 +614,34 @@ export function updateEnvParticles(game) {
         game.particles.emit(pPos, 1, neonColors[Math.floor(Math.random() * neonColors.length)], new THREE.Vector3(0, 0.5, 0), 3, 0.1);
         break;
       }
+      case 'petals': {
+        const petalColors = [0xF48FB1, 0xF8BBD0, 0xCE93D8, 0xFDD835];
+        game.particles.emit(pPos, 1, petalColors[Math.floor(Math.random() * petalColors.length)], new THREE.Vector3(-0.25, -0.6, 0.2), 3, 0.08);
+        break;
+      }
       case 'dust':
-        game.particles.emit(pPos, 1, 0xD2B48C, new THREE.Vector3(0.4, 0.2, 0.1), 2.2, 0.06);
-        break;
-      case 'motes':
-        game.particles.emit(pPos, 1, 0xA5D6A7, new THREE.Vector3(0, 0.15, 0), 2.8, 0.04);
-        break;
-      case 'mist':
-        game.particles.emit(pPos, 1, 0xB2DFDB, new THREE.Vector3(0.1, 0.05, 0.1), 3.2, 0.05);
+        game.particles.emit(pPos, 1, 0xD7B56D, new THREE.Vector3(0.5, 0.1, 0.2), 2, 0.06);
         break;
       case 'spores':
-        game.particles.emit(pPos, 1, 0xCE93D8, new THREE.Vector3(0, 0.18, 0), 3.8, 0.05);
+        game.particles.emit(pPos, 1, 0xA5D6A7, new THREE.Vector3(0, 0.2, 0), 4, 0.05);
+        break;
+      case 'wind':
+        game.particles.emit(pPos, 1, 0xCFD8DC, new THREE.Vector3(1.1, 0.05, 0), 1.5, 0.03);
         break;
       case 'bubbles':
-        game.particles.emit(pPos, 1, 0x80DEEA, new THREE.Vector3(0, 0.8, 0), 1.2, 0.07);
+        game.particles.emit(pPos, 1, 0x80DEEA, new THREE.Vector3(0, 1.2, 0), 2.5, 0.07);
+        break;
+      case 'drips':
+        game.particles.emit(pPos, 1, 0xA1887F, new THREE.Vector3(0, -1.4, 0), 1.4, 0.05);
+        break;
+      case 'sculk':
+        game.particles.emit(pPos, 1, 0x26C6DA, new THREE.Vector3(0, 0.35, 0), 2.8, 0.06);
+        break;
+      case 'souls':
+        game.particles.emit(pPos, 1, 0x81D4FA, new THREE.Vector3(0, 0.7, 0), 3.2, 0.07);
+        break;
+      case 'ender':
+        game.particles.emit(pPos, 1, 0xD4E157, new THREE.Vector3(0, 0.4, 0), 3.8, 0.06);
         break;
     }
   }
