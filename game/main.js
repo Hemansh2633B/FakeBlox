@@ -22,6 +22,7 @@ export class Game {
     this.renderer = null;
     this.camera = null;
     this.composer = null;
+    this.postprocessingDisabled = false;
     this.input = new InputManager();
     this.clock = new THREE.Clock();
     this.playerModel = new PlayerModel();
@@ -105,7 +106,7 @@ export class Game {
     document.body.appendChild(this.perfStats.dom);
 
     await RAPIER.init();
-    this.world = new RAPIER.World({ x: 0, y: -CONFIG.player.gravity, z: 0 });
+    this.world = new RAPIER.World({ x: 0, y: CONFIG.player.gravity, z: 0 });
 
     this.particles = new ParticleSystem(this.scene);
 
@@ -407,8 +408,18 @@ export class Game {
       updateCamera(this, dt);
     }
 
-    if (this.scene && this.threeCamera && this.composer) {
-      this.composer.render(dt);
+    if (this.scene && this.threeCamera) {
+      if (this.composer && !this.postprocessingDisabled) {
+        try {
+          this.composer.render(dt);
+        } catch (error) {
+          this.postprocessingDisabled = true;
+          console.error('[Renderer] Postprocessing disabled after render failure:', error);
+          this.renderer.render(this.scene, this.threeCamera);
+        }
+      } else {
+        this.renderer.render(this.scene, this.threeCamera);
+      }
     }
     if (this.perfStats) this.perfStats.end();
   }
