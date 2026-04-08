@@ -2,24 +2,56 @@
 import * as THREE from 'three';
 
 // ─── PRNG ───────────────────────────────────────────────
+const MASK_64 = (1n << 64n) - 1n;
+const GOLDEN_GAMMA_64 = 0x9E3779B97F4A7C15n;
+
 export function hashString(str) {
-  let h = 2166136261;
+  // 64-bit FNV-1a hash for stable string → long seed conversion.
+  let h = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
   for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+    h ^= BigInt(str.charCodeAt(i));
+    h = (h * prime) & MASK_64;
   }
-  return h >>> 0;
+  return h;
+}
+
+function normalizeSeed(seed) {
+  if (typeof seed === 'bigint') return BigInt.asUintN(64, seed);
+
+  if (typeof seed === 'number' && Number.isFinite(seed)) {
+    return BigInt.asUintN(64, BigInt(Math.trunc(seed)));
+  }
+
+  if (typeof seed === 'string') {
+    const raw = seed.trim();
+    if (!raw) return hashString('default');
+    // Accept signed integer strings as long seeds.
+    if (/^[+-]?\d+$/.test(raw)) {
+      try { return BigInt.asUintN(64, BigInt(raw)); } catch (e) {}
+    }
+    return hashString(raw);
+  }
+
+  return hashString('default');
+}
+
+function splitmix64(x) {
+  let z = (x + GOLDEN_GAMMA_64) & MASK_64;
+  z = ((z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n) & MASK_64;
+  z = ((z ^ (z >> 27n)) * 0x94d049bb133111ebn) & MASK_64;
+  return z ^ (z >> 31n);
 }
 
 export class SeededRNG {
-  constructor(seed) { this.state = seed | 0; }
+  constructor(seed64) { this.state = normalizeSeed(seed64); }
 
   next() {
-    this.state |= 0;
-    this.state = this.state + 0x6D2B79F5 | 0;
-    let t = Math.imul(this.state ^ this.state >>> 15, 1 | this.state);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    // SplitMix64: deterministic 64-bit PRNG suitable for procedural generation.
+    this.state = (this.state + GOLDEN_GAMMA_64) & MASK_64;
+    const out = splitmix64(this.state);
+    // Use top 53 bits to map to JS double in [0,1).
+    return Number(out >> 11n) / 9007199254740992;
   }
 
   nextFloat(min, max) { return this.next() * (max - min) + min; }
@@ -44,8 +76,7 @@ export class SeededRNG {
 }
 
 export function createRNG(seed) {
-  const n = typeof seed === 'string' ? hashString(seed || 'default') : seed >>> 0;
-  return new SeededRNG(n);
+  return new SeededRNG(normalizeSeed(seed));
 }
 
 // ─── CONFIG ─────────────────────────────────────────────

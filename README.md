@@ -13,7 +13,7 @@
 
 ## ✨ Features
 
-- Procedural, seed-based level generation
+- Procedural level generation driven by a 64-bit integer seed + PRNG
 - Difficulty presets: easy, normal, hard, extreme
 - Endless run mode
 - Daily challenge with unique seed
@@ -57,7 +57,7 @@ Then open [http://localhost:8000/game.html](http://localhost:8000/game.html) in 
 
 ## 🌱 Seed Sharing & URL Parameters
 
-- Enter a custom seed in the menu to replay/share a level
+- Enter a custom seed in the menu to replay/share a level (numeric values are treated as 64-bit integer seeds)
 - Click the HUD seed or end-screen copy button to copy the current seed
 - Supported URL parameters:
   - `?seed=your_seed`
