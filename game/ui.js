@@ -23,6 +23,15 @@ function generateSeed() {
  * @param {import('./main.js').Game} game
  */
 export function wireUI(game) {
+  const byId = (id) => document.getElementById(id);
+  const on = (id, event, handler, options) => {
+    const el = byId(id);
+    if (!el) return null;
+    el.addEventListener(event, handler, options);
+    return el;
+  };
+  const seedInput = byId('seed-input');
+
   // Audio context resume on first user interaction
   const resumeAudio = () => {
     audio.init();
@@ -44,75 +53,75 @@ export function wireUI(game) {
   });
 
   // Random seed
-  document.getElementById('btn-random-seed').addEventListener('click', () => {
-    document.getElementById('seed-input').value = generateSeed();
+  on('btn-random-seed', 'click', () => {
+    if (seedInput) seedInput.value = generateSeed();
     audio.init();
     audio.uiClick();
   });
 
   // Paste seed
-  document.getElementById('btn-paste-seed').addEventListener('click', async () => {
+  on('btn-paste-seed', 'click', async () => {
     try {
       const text = await navigator.clipboard.readText();
-      document.getElementById('seed-input').value = text;
+      if (seedInput) seedInput.value = text;
     } catch (e) {}
     audio.init();
     audio.uiClick();
   });
 
   // Play
-  document.getElementById('btn-play').addEventListener('click', () => {
-    const seed = document.getElementById('seed-input').value || generateSeed();
+  on('btn-play', 'click', () => {
+    const seed = seedInput?.value || generateSeed();
     const diff = document.querySelector('.diff-btn.active')?.dataset.diff || 'normal';
     game.startLevel(seed, diff);
   });
 
   // Daily challenge
-  document.getElementById('btn-daily').addEventListener('click', () => {
+  on('btn-daily', 'click', () => {
     const today = new Date();
     const seed = `daily_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    document.getElementById('seed-input').value = seed;
+    if (seedInput) seedInput.value = seed;
     game.startLevel(seed, 'normal');
   });
 
   // Endless mode
-  document.getElementById('btn-endless').addEventListener('click', () => {
-    const seed = document.getElementById('seed-input').value || `endless-${generateSeed()}`;
+  on('btn-endless', 'click', () => {
+    const seed = seedInput?.value || `endless-${generateSeed()}`;
     const diff = document.querySelector('.diff-btn.active')?.dataset.diff || 'normal';
     game.startLevel(seed, diff, true);
   });
 
   // Pause menu
-  document.getElementById('btn-resume').addEventListener('click', () => game.handleResume());
-  document.getElementById('btn-restart').addEventListener('click', () => {
+  on('btn-resume', 'click', () => game.handleResume());
+  on('btn-restart', 'click', () => {
     game.handleResume();
     game.startLevel(game.currentSeed, game.currentDifficulty, game.isEndless);
   });
-  document.getElementById('btn-quit').addEventListener('click', () => game.returnToMenu());
+  on('btn-quit', 'click', () => game.returnToMenu());
 
   // End screen
-  document.getElementById('btn-play-again').addEventListener('click', () => {
-    document.getElementById('end-screen').classList.remove('visible');
+  on('btn-play-again', 'click', () => {
+    byId('end-screen')?.classList.remove('visible');
     game.startLevel(game.currentSeed, game.currentDifficulty);
   });
-  document.getElementById('btn-new-seed').addEventListener('click', () => {
-    document.getElementById('end-screen').classList.remove('visible');
+  on('btn-new-seed', 'click', () => {
+    byId('end-screen')?.classList.remove('visible');
     game.returnToMenu();
-    document.getElementById('btn-random-seed').click();
+    byId('btn-random-seed')?.click();
   });
-  document.getElementById('btn-end-menu').addEventListener('click', () => {
-    document.getElementById('end-screen').classList.remove('visible');
+  on('btn-end-menu', 'click', () => {
+    byId('end-screen')?.classList.remove('visible');
     game.returnToMenu();
   });
 
   // Copy seed
-  document.getElementById('btn-copy-seed').addEventListener('click', () => {
+  on('btn-copy-seed', 'click', () => {
     navigator.clipboard.writeText(game.currentSeed).then(() => {
       game.showNotification('📋 Seed copied!');
       achievements.unlock('social');
     });
   });
-  document.getElementById('hud-seed').addEventListener('click', () => {
+  on('hud-seed', 'click', () => {
     navigator.clipboard.writeText(game.currentSeed).then(() => {
       game.showNotification('📋 Seed copied!');
       achievements.unlock('social');
@@ -120,45 +129,47 @@ export function wireUI(game) {
   });
 
   // Graphics settings
-  const qualityEl = document.getElementById('graphics-quality');
-  const fpsEl = document.getElementById('fps-limit');
-  const backendEl = document.getElementById('renderer-backend');
-  const savedGraphics = saveManager.load('graphics', { quality: 'ultra', fpsCap: 0, backend: 'auto' });
-  qualityEl.value = savedGraphics.quality || 'ultra';
-  fpsEl.value = String(savedGraphics.fpsCap ?? 0);
-  backendEl.value = savedGraphics.backend || 'auto';
-  const applyGraphics = () => {
-    game.applyGraphicsSettings({
-      quality: qualityEl.value,
-      fpsCap: Number(fpsEl.value),
-      backend: backendEl.value,
-    });
-  };
-  qualityEl.addEventListener('change', applyGraphics);
-  fpsEl.addEventListener('change', applyGraphics);
-  backendEl.addEventListener('change', applyGraphics);
-  applyGraphics();
+  const qualityEl = byId('graphics-quality');
+  const fpsEl = byId('fps-limit');
+  const backendEl = byId('renderer-backend');
+  if (qualityEl && fpsEl && backendEl) {
+    const savedGraphics = saveManager.load('graphics', { quality: 'ultra', fpsCap: 0, backend: 'auto' });
+    qualityEl.value = savedGraphics.quality || 'ultra';
+    fpsEl.value = String(savedGraphics.fpsCap ?? 0);
+    backendEl.value = savedGraphics.backend || 'auto';
+    const applyGraphics = () => {
+      game.applyGraphicsSettings({
+        quality: qualityEl.value,
+        fpsCap: Number(fpsEl.value),
+        backend: backendEl.value,
+      });
+    };
+    qualityEl.addEventListener('change', applyGraphics);
+    fpsEl.addEventListener('change', applyGraphics);
+    backendEl.addEventListener('change', applyGraphics);
+    applyGraphics();
+  }
 
   // Volume sliders
-  document.getElementById('music-vol').addEventListener('input', (e) => {
+  on('music-vol', 'input', (e) => {
     audio.setMusicVol(e.target.value / 100);
   });
-  document.getElementById('sfx-vol').addEventListener('input', (e) => {
+  on('sfx-vol', 'input', (e) => {
     audio.setSfxVol(e.target.value / 100);
   });
 
   // URL params seed
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('seed')) {
-    document.getElementById('seed-input').value = urlParams.get('seed');
+  if (seedInput && urlParams.has('seed')) {
+    seedInput.value = urlParams.get('seed');
     if (urlParams.has('difficulty')) {
       const d = urlParams.get('difficulty');
       document.querySelectorAll('.diff-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.diff === d);
       });
     }
-  } else if (!document.getElementById('seed-input').value) {
-    document.getElementById('seed-input').value = generateSeed();
+  } else if (seedInput && !seedInput.value) {
+    seedInput.value = generateSeed();
   }
 
   // Prevent context menu globally

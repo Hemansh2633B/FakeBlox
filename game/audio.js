@@ -49,7 +49,13 @@ export class AudioManager {
     if (this.ready) return;
     const MYINSTANTS = 'https://www.myinstants.com/media/sounds/';
     const soundUrl = (name) => `${MYINSTANTS}${name}`;
-    const loadMp3 = (path, volume = 1) => new Howl({ src: [path], format: ['mp3'], volume });
+    const loadMp3 = (path, volume = 1) => new Howl({
+      src: [path],
+      format: ['mp3'],
+      volume,
+      html5: true,
+      preload: true,
+    });
     
     // PlayTone offline helper
     const playT = (ctx, freq, dur, type, vol, start) => {
