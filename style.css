@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Nunito', sans-serif; background: #000; }
+canvas { display: block; width: 100%; height: 100%; }
+#ui-layer {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 10;
+}
+#ui-layer * { pointer-events: auto; }
+#main-menu {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; transition: opacity 0.5s;
+}
+#main-menu.hidden { opacity: 0; pointer-events: none; }
+.menu-title {
+  font-family: 'Fredoka One', cursive; font-size: clamp(2.5rem, 8vw, 5rem);
+  color: #fff; text-shadow: 0 0 30px #7c4dff, 0 0 60px #7c4dff, 0 4px 0 #4a148c;
+  margin-bottom: 0.5rem; letter-spacing: 2px;
+  animation: titleBounce 2s ease-in-out infinite;
+}
+@keyframes titleBounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.menu-subtitle {
+  font-size: 1.1rem; color: #b388ff; margin-bottom: 2rem; font-weight: 600;
+}
+.menu-section {
+  background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem 2rem;
+  margin-bottom: 1rem; width: min(90%, 420px); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.menu-section label {
+  display: block; color: #b388ff; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.seed-row {
+  display: flex; gap: 0.5rem;
+}
+.seed-input {
+  flex: 1; padding: 0.7rem 1rem; border-radius: 10px; border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; font-family: 'Nunito', sans-serif;
+  outline: none; transition: border-color 0.3s;
+}
+.seed-input:focus { border-color: #7c4dff; }
+.seed-input::placeholder { color: rgba(255,255,255,0.3); }
+.btn {
+  padding: 0.7rem 1.2rem; border-radius: 10px; border: none; cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.btn:active { transform: translateY(0); }
+.btn-primary {
+  background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff;
+  box-shadow: 0 2px 10px rgba(124,77,255,0.4);
+}
+.btn-secondary {
+  background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+}
+.btn-play {
+  width: 100%; padding: 1rem; font-size: 1.2rem; margin-top: 0.5rem;
+  background: linear-gradient(135deg, #00e676, #69f0ae); color: #1b5e20;
+  box-shadow: 0 4px 20px rgba(0,230,118,0.4);
+  font-family: 'Fredoka One', cursive; letter-spacing: 2px;
+}
+.btn-play:hover { box-shadow: 0 6px 25px rgba(0,230,118,0.6); }
+.btn-daily {
+  width: 100%; padding: 0.8rem; font-size: 1rem; margin-top: 0.5rem;
+  background: linear-gradient(135deg, #ff9800, #ffb74d); color: #4e2700;
+  font-family: 'Fredoka One', cursive;
+}
+.btn-endless {
+  width: 100%; padding: 0.8rem; font-size: 1rem; margin-top: 0.5rem;
+  background: linear-gradient(135deg, #e040fb, #ea80fc); color: #4a0072;
+  font-family: 'Fredoka One', cursive;
+}
+.difficulty-row {
+  display: flex; gap: 0.5rem; margin-top: 0.5rem;
+}
+.diff-btn {
+  flex: 1; padding: 0.6rem 0.3rem; border-radius: 8px; border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.2); color: #aaa; cursor: pointer; font-weight: 700;
+  font-size: 0.8rem; transition: all 0.2s; text-align: center;
+  font-family: 'Nunito', sans-serif;
+}
+.diff-btn.active { border-color: #7c4dff; color: #fff; background: rgba(124,77,255,0.3); }
+.diff-btn:hover { border-color: #7c4dff; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 0.5rem; color: #ccc; font-size: 0.9rem;
+}
+.settings-row input[type="range"] {
+  width: 120px; accent-color: #7c4dff;
+}
+#hud {
+  position: absolute; top: 0; left: 0; width: 100%; padding: 15px 20px;
+  display: none; z-index: 20;
+}
+#hud.visible { display: block; }
+.hud-timer {
+  position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+  font-family: 'Fredoka One', cursive; font-size: 1.8rem; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5); letter-spacing: 2px;
+}
+.hud-stats {
+  position: absolute; top: 15px; right: 20px; text-align: right;
+}
+.hud-stats div {
+  font-weight: 700; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  font-size: 1rem; margin-bottom: 4px;
+}
+.hud-checkpoint {
+  position: absolute; top: 15px; left: 20px;
+  font-weight: 700; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.hud-seed {
+  position: absolute; bottom: 15px; left: 20px; font-size: 0.8rem;
+  color: rgba(255,255,255,0.5); cursor: pointer;
+}
+.hud-seed:hover { color: rgba(255,255,255,0.8); }
+.hud-notification {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-family: 'Fredoka One', cursive; font-size: 2rem; color: #69f0ae;
+  text-shadow: 0 0 20px rgba(105,240,174,0.5); opacity: 0;
+  transition: opacity 0.3s; pointer-events: none;
+}
+.hud-notification.show { opacity: 1; }
+#pause-menu {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center;
+  flex-direction: column; z-index: 50; backdrop-filter: blur(5px);
+}
+#pause-menu.visible { display: flex; }
+#pause-menu h2 {
+  font-family: 'Fredoka One', cursive; font-size: 2.5rem; color: #fff; margin-bottom: 1.5rem;
+}
+#pause-menu .btn { width: 200px; margin-bottom: 0.7rem; text-align: center; }
+#end-screen {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center;
+  flex-direction: column; z-index: 60; backdrop-filter: blur(8px);
+}
+#end-screen.visible { display: flex; }
+#end-screen h2 {
+  font-family: 'Fredoka One', cursive; font-size: 3rem; color: #69f0ae; margin-bottom: 0.5rem;
+  text-shadow: 0 0 30px rgba(105,240,174,0.5);
+}
+.end-stats {
+  background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem 2.5rem;
+  margin: 1rem 0; text-align: center; border: 1px solid rgba(255,255,255,0.1);
+}
+.end-stats div {
+  color: #fff; font-size: 1.1rem; margin: 0.4rem 0; font-weight: 600;
+}
+.end-stars {
+  font-size: 2.5rem; margin: 0.5rem 0;
+}
+.end-score {
+  font-family: 'Fredoka One', cursive; font-size: 2rem; color: #ffab00;
+}
+#end-screen .btn { width: 200px; margin-top: 0.5rem; text-align: center; }
+#loading-screen {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: #1a1a2e; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; z-index: 200;
+  transition: opacity 0.5s;
+}
+#loading-screen.hidden { opacity: 0; pointer-events: none; }
+.loading-text {
+  font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: #7c4dff;
+  margin-bottom: 1rem;
+}
+.loading-bar-bg {
+  width: 250px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;
+}
+.loading-bar-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, #7c4dff, #b388ff);
+  border-radius: 3px; transition: width 0.3s;
+}
+#touch-controls {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 200px;
+  display: none; z-index: 30;
+}
+.touch-jump-btn {
+  position: absolute; bottom: 40px; right: 40px; width: 80px; height: 80px;
+  border-radius: 50%; background: rgba(255,255,255,0.15); border: 3px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive; color: rgba(255,255,255,0.7); font-size: 0.9rem;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.touch-sprint-btn {
+  position: absolute; bottom: 40px; right: 140px; width: 55px; height: 55px;
+  border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Nunito', sans-serif; color: rgba(255,255,255,0.5); font-size: 0.7rem; font-weight: 700;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+#joystick-zone {
+  position: absolute; bottom: 10px; left: 10px; width: 180px; height: 180px;
+}
+.joystick-base {
+  position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px;
+  border-radius: 50%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15);
+}
+.joystick-knob {
+  position: absolute; width: 50px; height: 50px; border-radius: 50%;
+  background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.achievement-toast {
+  position: absolute; top: 80px; right: 20px; background: rgba(0,0,0,0.85);
+  border: 2px solid #ffab00; border-radius: 12px; padding: 12px 20px;
+  color: #fff; display: flex; align-items: center; gap: 10px;
+  transform: translateX(120%); transition: transform 0.4s ease;
+  z-index: 40; backdrop-filter: blur(5px);
+}
+.achievement-toast.show { transform: translateX(0); }
+.achievement-toast .ach-icon { font-size: 1.5rem; }
+.achievement-toast .ach-text { font-weight: 700; font-size: 0.9rem; }
+.achievement-toast .ach-desc { font-size: 0.75rem; color: #aaa; }
+#crosshair {
+  position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
+  background: rgba(255,255,255,0.4); border-radius: 50%;
+  transform: translate(-50%, -50%); pointer-events: none; display: none;
+  z-index: 15;
+}
+#death-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255,0,0,0.0); pointer-events: none; z-index: 25;
+  transition: background 0.15s;
+}
+#death-overlay.flash { background: rgba(255,0,0,0.3); }
+@media (max-width: 600px) {
+  .menu-title { font-size: 2.2rem; }
+  .menu-section { padding: 1rem 1.2rem; width: 95%; }
+  .hud-timer { font-size: 1.3rem; }
+  .difficulty-row { flex-wrap: wrap; }
+  .diff-btn { flex: 1 1 45%; }
+}
