@@ -1,85 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FakeBlox Main Page</title>
-  <link rel="stylesheet" href="pages.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Obby Runner — Seed-Based 3D Obstacle Course</title>
+<meta name="description" content="A web-based 3D obby game with infinite procedurally generated levels. Share seeds with friends!">
+<meta property="og:title" content="Obby Runner — Seed-Based 3D Obstacle Course">
+<meta property="og:description" content="A web-based 3D obby game with infinite procedurally generated levels. Share seeds with friends! 100% open source.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:,">
 </head>
 <body>
-  <nav>
-    <div class="container nav-inner">
-      <div class="brand">🧱 FakeBlox</div>
-      <div class="links">
-        <a href="index.html">Main</a>
-        <a href="overworld.html">Overworld</a>
-        <a href="nether.html">Nether</a>
-        <a href="the-end.html">The End</a>
-        <a href="game.html">Play Game</a>
-      </div>
-    </div>
-  </nav>
-
-  <main class="container">
-    <section class="hero">
-      <h1>Welcome to FakeBlox Biome Explorer</h1>
-      <p>
-        This main landing page links to three world landing pages: Overworld, Nether, and The End.
-        Browse biome information by dimension and jump into the game anytime.
-      </p>
-      <p><a class="btn" href="game.html">▶ Launch Obby Runner</a></p>
-    </section>
-
-    <section>
-      <h2 class="section-title">Dimension Landing Pages</h2>
-      <div class="grid">
-        <article class="card">
-          <h3>🌍 Overworld</h3>
-          <p>Explore plains, forests, caves, mountains, swamps, oceans, and more.</p>
-          <a class="btn" href="overworld.html">Open Overworld</a>
-        </article>
-        <article class="card">
-          <h3>🔥 Nether</h3>
-          <p>Review all five Nether biomes and their hazards and resources.</p>
-          <a class="btn" href="nether.html">Open Nether</a>
-        </article>
-        <article class="card">
-          <h3>🌌 The End</h3>
-          <p>See End biome zones from the dragon island to remote outer islands.</p>
-          <a class="btn" href="the-end.html">Open The End</a>
-        </article>
+<div id="loading-screen">
+  <div class="loading-text">Loading Obby Runner...</div>
+  <div class="loading-bar-bg"><div class="loading-bar-fill" id="loading-bar"></div></div>
+</div>
+<div id="ui-layer">
+  <div id="main-menu">
+    <div class="menu-title">🏃 OBBY RUNNER</div>
+    <div class="menu-subtitle">Seed-Based Obstacle Course</div>
+    <div class="menu-section">
+      <label>🌱 Level Seed</label>
+      <div class="seed-row">
+        <input type="text" class="seed-input" id="seed-input" placeholder="Enter seed or leave empty for random..." value="">
+        <button class="btn btn-secondary" id="btn-random-seed">🎲</button>
+        <button class="btn btn-secondary" id="btn-paste-seed">📋</button>
       </div>
     </div>
     <div class="menu-section">
-      <label>🎛️ Graphics & Performance</label>
-      <div class="settings-row">
-        <span>Quality</span>
-        <select id="graphics-quality">
-          <option value="ultra" selected>Ultra</option>
-          <option value="high">High</option>
-          <option value="balanced">Balanced</option>
-          <option value="performance">Performance</option>
-        </select>
+      <label>⚙️ Difficulty</label>
+      <div class="difficulty-row">
+        <button class="diff-btn" data-diff="easy">😊 Easy</button>
+        <button class="diff-btn active" data-diff="normal">😐 Normal</button>
+        <button class="diff-btn" data-diff="hard">😈 Hard</button>
+        <button class="diff-btn" data-diff="extreme">💀 Extreme</button>
       </div>
-      <div class="settings-row">
-        <span>FPS</span>
-        <select id="fps-limit">
-          <option value="0" selected>Unlimited</option>
-          <option value="240">240</option>
-          <option value="165">165</option>
-          <option value="144">144</option>
-          <option value="120">120</option>
-          <option value="60">60</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <span>Renderer</span>
-        <select id="renderer-backend">
-          <option value="auto" selected>Auto (WebGL2)</option>
-          <option value="webgl">WebGL Compatible</option>
-        </select>
-      </div>
-      <div class="settings-hint">Vulkan/OpenGL desktop APIs are not directly selectable in browsers. Auto picks the fastest WebGL path available.</div>
     </div>
     <div class="menu-section">
       <label>🔊 Audio</label>
