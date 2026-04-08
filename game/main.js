@@ -92,6 +92,7 @@ export class Game {
   }
 
   async init() {
+    const byId = (id) => document.getElementById(id);
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -144,8 +145,9 @@ export class Game {
     // Wire UI
     wireUI(this);
 
-    document.getElementById('loading-bar').style.width = '100%';
-    setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 500);
+    const loadingBar = byId('loading-bar');
+    if (loadingBar) loadingBar.style.width = '100%';
+    setTimeout(() => byId('loading-screen')?.classList.add('hidden'), 500);
     this.loop();
   }
 
@@ -226,15 +228,16 @@ export class Game {
     this.checkpointMeshes = built.checkpointMeshes;
     this.vineMeshes = built.vineMeshes || [];
 
-    document.getElementById('hud').classList.add('visible');
-    document.getElementById('hud-seed').textContent = `🌱 Seed: ${seed}`;
+    document.getElementById('hud')?.classList.add('visible');
+    const hudSeedEl = document.getElementById('hud-seed');
+    if (hudSeedEl) hudSeedEl.textContent = `🌱 Seed: ${seed}`;
     updateHUD(this);
 
     const firstTheme = this.levelData.themes[0];
     this.applyTheme(firstTheme);
     audio.startMusic(firstTheme);
     this.state = 'playing';
-    document.getElementById('main-menu').classList.add('hidden');
+    document.getElementById('main-menu')?.classList.add('hidden');
   }
 
   clearLevel() {
@@ -320,7 +323,7 @@ export class Game {
     this.stats.totalDeaths++;
     audio.death();
     this.particles.emit(this.playerPos.clone(), 30, 0xFF4444, new THREE.Vector3(0, 2, 0), 0.8);
-    document.getElementById('death-overlay').classList.add('flash');
+    document.getElementById('death-overlay')?.classList.add('flash');
     if (this.stats.totalDeaths >= 100) achievements.unlock('persistent');
     // Chromatic aberration death flash
     if (this.chromaticEffect) {
@@ -328,7 +331,7 @@ export class Game {
       setTimeout(() => { if (this.chromaticEffect) this.chromaticEffect.offset.set(0.0, 0.0); }, 400);
     }
     setTimeout(() => {
-      document.getElementById('death-overlay').classList.remove('flash');
+      document.getElementById('death-overlay')?.classList.remove('flash');
     }, 200);
     setTimeout(() => this.respawn(), CONFIG.player.deathTime * 1000);
   }
@@ -374,13 +377,18 @@ export class Game {
       if (finalScore >= sc.stars[i]) { starRating = i + 1; break; }
     }
 
-    document.getElementById('end-stars').textContent = '⭐'.repeat(starRating) + '☆'.repeat(5 - starRating);
-    document.getElementById('end-score').textContent = `Score: ${finalScore.toLocaleString()}`;
-    document.getElementById('end-time').textContent = `⏱️ Time: ${formatTime(this.timer)}`;
-    document.getElementById('end-deaths').textContent = `💀 Deaths: ${this.deaths}`;
-    document.getElementById('end-collected').textContent = `⭐ Stars: ${this.starsCollected}/${this.totalStars}`;
-    document.getElementById('end-screen').classList.add('visible');
-    document.getElementById('hud').classList.remove('visible');
+    const endStars = document.getElementById('end-stars');
+    if (endStars) endStars.textContent = '⭐'.repeat(starRating) + '☆'.repeat(5 - starRating);
+    const endScore = document.getElementById('end-score');
+    if (endScore) endScore.textContent = `Score: ${finalScore.toLocaleString()}`;
+    const endTime = document.getElementById('end-time');
+    if (endTime) endTime.textContent = `⏱️ Time: ${formatTime(this.timer)}`;
+    const endDeaths = document.getElementById('end-deaths');
+    if (endDeaths) endDeaths.textContent = `💀 Deaths: ${this.deaths}`;
+    const endCollected = document.getElementById('end-collected');
+    if (endCollected) endCollected.textContent = `⭐ Stars: ${this.starsCollected}/${this.totalStars}`;
+    document.getElementById('end-screen')?.classList.add('visible');
+    document.getElementById('hud')?.classList.remove('visible');
 
     saveManager.saveBestRun(this.currentSeed, this.currentDifficulty, {
       time: this.timer, deaths: this.deaths,
@@ -405,7 +413,7 @@ export class Game {
   handlePause() {
     if (this.state === 'playing') {
       this.state = 'paused';
-      document.getElementById('pause-menu').classList.add('visible');
+      document.getElementById('pause-menu')?.classList.add('visible');
       if (document.pointerLockElement) document.exitPointerLock();
     }
   }
@@ -413,7 +421,7 @@ export class Game {
   handleResume() {
     if (this.state === 'paused') {
       this.state = 'playing';
-      document.getElementById('pause-menu').classList.remove('visible');
+      document.getElementById('pause-menu')?.classList.remove('visible');
     }
   }
 
@@ -421,10 +429,10 @@ export class Game {
     this.state = 'menu';
     this.clearLevel();
     audio.stopMusic();
-    document.getElementById('hud').classList.remove('visible');
-    document.getElementById('pause-menu').classList.remove('visible');
-    document.getElementById('end-screen').classList.remove('visible');
-    document.getElementById('main-menu').classList.remove('hidden');
+    document.getElementById('hud')?.classList.remove('visible');
+    document.getElementById('pause-menu')?.classList.remove('visible');
+    document.getElementById('end-screen')?.classList.remove('visible');
+    document.getElementById('main-menu')?.classList.remove('hidden');
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
