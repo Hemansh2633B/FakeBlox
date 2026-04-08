@@ -96,6 +96,21 @@ canvas { display: block; width: 100%; height: 100%; }
 .settings-row input[type="range"] {
   width: 120px; accent-color: #7c4dff;
 }
+
+.settings-row select {
+  width: 140px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.35rem 0.45rem;
+}
+.settings-hint {
+  margin-top: 0.6rem;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
 #hud {
   position: absolute; top: 0; left: 0; width: 100%; padding: 15px 20px;
   display: none; z-index: 20;

@@ -37,6 +37,37 @@
       </div>
     </div>
     <div class="menu-section">
+      <label>🎛️ Graphics & Performance</label>
+      <div class="settings-row">
+        <span>Quality</span>
+        <select id="graphics-quality">
+          <option value="ultra" selected>Ultra</option>
+          <option value="high">High</option>
+          <option value="balanced">Balanced</option>
+          <option value="performance">Performance</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <span>FPS</span>
+        <select id="fps-limit">
+          <option value="0" selected>Unlimited</option>
+          <option value="240">240</option>
+          <option value="165">165</option>
+          <option value="144">144</option>
+          <option value="120">120</option>
+          <option value="60">60</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <span>Renderer</span>
+        <select id="renderer-backend">
+          <option value="auto" selected>Auto (WebGL2)</option>
+          <option value="webgl">WebGL Compatible</option>
+        </select>
+      </div>
+      <div class="settings-hint">Vulkan/OpenGL desktop APIs are not directly selectable in browsers. Auto picks the fastest WebGL path available.</div>
+    </div>
+    <div class="menu-section">
       <label>🔊 Audio</label>
       <div class="settings-row">
         <span>Music</span>
