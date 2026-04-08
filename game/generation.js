@@ -123,9 +123,82 @@ export const THEMES = {
     ambient: 0x220033, dirLight: 0xEA80FC, dirIntensity: 0.8,
     ground: 0x110011, particles: 'neonOrbs',
   },
+  desert: {
+    name: 'Desert', emoji: '🏜️',
+    colors: [0xE2C97A, 0xD9B96E, 0xC9A45F, 0xF4D58D],
+    accent: 0xB57F3B, sky: [0xF6D58A, 0xF8E4B5, 0xFFF2D6],
+    fog: 0xE8C98A, fogNear: 55, fogFar: 190,
+    ambient: 0xd9b97a, dirLight: 0xFFF1C1, dirIntensity: 1.15,
+    ground: 0xC9A45F, particles: 'dust',
+  },
+  forest: {
+    name: 'Forest', emoji: '🌲',
+    colors: [0x2E7D32, 0x1B5E20, 0x388E3C, 0x4CAF50],
+    accent: 0x6D4C41, sky: [0x7FA98B, 0x9FC7A8, 0xC8E6C9],
+    fog: 0x7FA98B, fogNear: 45, fogFar: 165,
+    ambient: 0x7aa28b, dirLight: 0xE8F5E9, dirIntensity: 1.0,
+    ground: 0x2E7D32, particles: 'leaves',
+  },
+  swamp: {
+    name: 'Swamp', emoji: '🐸',
+    colors: [0x556B2F, 0x6B8E23, 0x4E5D2F, 0x3E4A22],
+    accent: 0x795548, sky: [0x607D5A, 0x7A9B72, 0x9FBF93],
+    fog: 0x4A5D3D, fogNear: 35, fogFar: 120,
+    ambient: 0x5f7551, dirLight: 0xC5E1A5, dirIntensity: 0.85,
+    ground: 0x3E4A22, particles: 'motes',
+  },
+  taiga: {
+    name: 'Taiga', emoji: '🌨️',
+    colors: [0x607D8B, 0x78909C, 0x546E7A, 0x90A4AE],
+    accent: 0x455A64, sky: [0xAFC5D0, 0xCFD8DC, 0xECEFF1],
+    fog: 0x9FB5C0, fogNear: 50, fogFar: 170,
+    ambient: 0x9fb1bb, dirLight: 0xE1F5FE, dirIntensity: 0.95,
+    ground: 0x607D8B, particles: 'snow',
+  },
+  jungle: {
+    name: 'Jungle', emoji: '🌴',
+    colors: [0x1B5E20, 0x2E7D32, 0x33691E, 0x43A047],
+    accent: 0x8D6E63, sky: [0x6FAE8A, 0x8BC9A2, 0xBEE8C8],
+    fog: 0x5D8E72, fogNear: 42, fogFar: 145,
+    ambient: 0x7cb48f, dirLight: 0xDCEDC8, dirIntensity: 1.05,
+    ground: 0x2E7D32, particles: 'mist',
+  },
+  badlands: {
+    name: 'Badlands', emoji: '🪨',
+    colors: [0xA65D3D, 0x8D4B32, 0xC77D52, 0xD69C6B],
+    accent: 0x6D4C41, sky: [0xD89A6E, 0xE3B184, 0xF4D0A8],
+    fog: 0xB87953, fogNear: 48, fogFar: 155,
+    ambient: 0xbd805b, dirLight: 0xFFE0B2, dirIntensity: 1.05,
+    ground: 0x8D4B32, particles: 'dust',
+  },
+  mushroom: {
+    name: 'Mushroom Fields', emoji: '🍄',
+    colors: [0xBA68C8, 0xCE93D8, 0x9575CD, 0xF06292],
+    accent: 0xF8BBD0, sky: [0x7E57C2, 0x9575CD, 0xB39DDB],
+    fog: 0x7E57C2, fogNear: 55, fogFar: 180,
+    ambient: 0x9d7ad0, dirLight: 0xF3E5F5, dirIntensity: 0.9,
+    ground: 0x6A1B9A, particles: 'spores',
+  },
+  oceanic: {
+    name: 'Oceanic', emoji: '🌊',
+    colors: [0x0288D1, 0x039BE5, 0x0277BD, 0x4FC3F7],
+    accent: 0x80DEEA, sky: [0x4FC3F7, 0x81D4FA, 0xB3E5FC],
+    fog: 0x4FA8D6, fogNear: 52, fogFar: 175,
+    ambient: 0x82c7e8, dirLight: 0xE1F5FE, dirIntensity: 1.05,
+    ground: 0x0277BD, particles: 'bubbles',
+  },
+  dark_forest: {
+    name: 'Dark Forest', emoji: '🌑',
+    colors: [0x1C2A24, 0x23342C, 0x2E4438, 0x374F42],
+    accent: 0x8D6E63, sky: [0x2A2F3A, 0x34414F, 0x455A64],
+    fog: 0x1E2B25, fogNear: 30, fogFar: 110,
+    ambient: 0x2f3d36, dirLight: 0xB0BEC5, dirIntensity: 0.75,
+    ground: 0x1C2A24, particles: 'motes',
+  },
 };
 
 export const THEME_KEYS = Object.keys(THEMES);
+export const MAX_BIOMES_PER_RUN = 15;
 
 // ─── LEVEL GENERATOR ────────────────────────────────────
 export class LevelGenerator {
@@ -133,25 +206,29 @@ export class LevelGenerator {
     const rng = createRNG(seed);
     const cfg = CONFIG.gen[difficulty] || CONFIG.gen.normal;
     const totalPlatforms = endless ? 200 : cfg.count;
-    const shuffledThemes = rng.shuffle([...THEME_KEYS]);
-    const sectionSize = Math.ceil(totalPlatforms / shuffledThemes.length);
+    const biomeRoute = this.createBiomeRoute(rng, totalPlatforms, endless);
+    const sectionSize = Math.ceil(totalPlatforms / biomeRoute.length);
     const platforms = [];
     const obstacles = [];
     const collectibles = [];
     const checkpoints = [];
+    const vines = [];
+    let hillMomentum = 0;
+    let hillSteps = 0;
 
     let pos = new THREE.Vector3(0, 0, 0);
+    let prevPos = pos.clone();
     platforms.push({
       pos: pos.clone(), size: new THREE.Vector3(6, 1, 6),
-      type: 'static', theme: shuffledThemes[0], rotation: 0,
+      type: 'static', theme: biomeRoute[0], rotation: 0,
       isSpawn: true, isCheckpoint: true, index: 0,
     });
     checkpoints.push(0);
 
     for (let i = 1; i < totalPlatforms; i++) {
       const progress = i / totalPlatforms;
-      const sectionIdx = Math.min(Math.floor(i / sectionSize), shuffledThemes.length - 1);
-      const themeKey = shuffledThemes[sectionIdx];
+      const sectionIdx = Math.min(Math.floor(i / sectionSize), biomeRoute.length - 1);
+      const themeKey = biomeRoute[sectionIdx];
       const theme = THEMES[themeKey];
       const diffMul = 0.3 + progress * 0.7;
       const isRestArea = (i % cfg.cpInterval === 0) || (i % Math.max(5, Math.floor(6 + rng.next() * 3)) === 0 && rng.chance(0.3));
@@ -169,10 +246,22 @@ export class LevelGenerator {
       const maxGap = Math.min(cfg.maxGap, 2 + diffMul * (cfg.maxGap - 2));
       const gap = rng.nextFloat(2, maxGap);
       const lateralOff = rng.nextFloat(-3, 3);
-      const heightOff = rng.nextFloat(-2, Math.min(3, 1 + diffMul * 2));
+      if (hillSteps <= 0 && !isRestArea && !isCheckpointPlatform && rng.chance(0.18)) {
+        hillSteps = rng.nextInt(3, 7);
+        hillMomentum = rng.nextFloat(0.8, 1.45);
+      }
+      let hillBoost = 0;
+      if (hillSteps > 0) {
+        const progressInHill = 1 - (hillSteps / 7);
+        hillBoost = Math.sin(progressInHill * Math.PI) * hillMomentum;
+        hillSteps--;
+      }
+      const rollingTerrain = Math.sin((i / Math.max(1, totalPlatforms - 1)) * Math.PI * 2) * 0.4;
+      const heightOff = rng.nextFloat(-2, Math.min(3, 1 + diffMul * 2)) + rollingTerrain + hillBoost;
       const clampedHeight = Math.min(heightOff, 3.0);
       const clampedGap = Math.min(gap, 8.0);
 
+      prevPos.copy(pos);
       pos = new THREE.Vector3(
         pos.x + lateralOff,
         Math.max(pos.y + clampedHeight, -5),
@@ -223,6 +312,22 @@ export class LevelGenerator {
       platforms.push(plat);
       if (isCheckpointPlatform) checkpoints.push(i);
 
+      const climbDelta = pos.y - prevPos.y;
+      if (climbDelta > 1.25 && rng.chance(0.85)) {
+        const baseY = prevPos.y + 0.2;
+        const vineHeight = Math.min(7, climbDelta + rng.nextFloat(1.2, 2.8));
+        const sideOffset = rng.chance(0.5) ? -1 : 1;
+        vines.push({
+          pos: new THREE.Vector3(
+            pos.x + sideOffset * (w * 0.35),
+            baseY + vineHeight / 2,
+            pos.z - d * 0.2
+          ),
+          height: vineHeight,
+          theme: themeKey,
+        });
+      }
+
       if (!isRestArea && !isCheckpointPlatform && i > 8) {
         const obsChance = (cfg.obsDensity / 10) * diffMul;
         if (rng.chance(obsChance)) {
@@ -262,11 +367,59 @@ export class LevelGenerator {
     const finishPos = new THREE.Vector3(lastPlat.pos.x, lastPlat.pos.y, lastPlat.pos.z + 8);
     platforms.push({
       pos: finishPos, size: new THREE.Vector3(8, 1, 8),
-      type: 'finish', theme: shuffledThemes[shuffledThemes.length - 1],
+      type: 'finish', theme: biomeRoute[biomeRoute.length - 1],
       rotation: 0, isFinish: true, index: platforms.length,
       color: 0xFFD700,
     });
 
-    return { platforms, obstacles, collectibles, checkpoints, themes: shuffledThemes };
+    return { platforms, obstacles, collectibles, checkpoints, themes: biomeRoute, vines };
+  }
+
+  createBiomeRoute(rng, totalPlatforms, endless) {
+    const climateBiomes = [
+      { key: 'desert', temp: 0.95, moisture: 0.15, weight: 1.1 },
+      { key: 'badlands', temp: 0.9, moisture: 0.2, weight: 0.95 },
+      { key: 'lava', temp: 1.0, moisture: 0.05, weight: 0.7 },
+      { key: 'grasslands', temp: 0.62, moisture: 0.55, weight: 1.0 },
+      { key: 'forest', temp: 0.56, moisture: 0.75, weight: 1.05 },
+      { key: 'jungle', temp: 0.85, moisture: 0.9, weight: 0.8 },
+      { key: 'swamp', temp: 0.7, moisture: 0.92, weight: 0.85 },
+      { key: 'oceanic', temp: 0.55, moisture: 0.95, weight: 0.9 },
+      { key: 'mushroom', temp: 0.52, moisture: 0.82, weight: 0.65 },
+      { key: 'taiga', temp: 0.28, moisture: 0.6, weight: 0.8 },
+      { key: 'ice', temp: 0.08, moisture: 0.5, weight: 0.9 },
+      { key: 'dark_forest', temp: 0.38, moisture: 0.82, weight: 0.75 },
+      { key: 'factory', temp: 0.45, moisture: 0.35, weight: 0.7 },
+      { key: 'space', temp: 0.15, moisture: 0.1, weight: 0.6 },
+      { key: 'neon', temp: 0.7, moisture: 0.45, weight: 0.65 },
+    ];
+    const sections = Math.min(
+      MAX_BIOMES_PER_RUN,
+      Math.max(6, Math.ceil(totalPlatforms / (endless ? 16 : 10)))
+    );
+    const route = [];
+    let temp = rng.next();
+    let moisture = rng.next();
+    let last = null;
+    for (let i = 0; i < sections; i++) {
+      const continentalness = Math.sin((i / sections) * Math.PI * 2 + rng.nextFloat(-0.25, 0.25)) * 0.08;
+      temp = THREE.MathUtils.clamp(temp + rng.nextFloat(-0.18, 0.18) + continentalness, 0, 1);
+      moisture = THREE.MathUtils.clamp(moisture + rng.nextFloat(-0.2, 0.2) - continentalness * 0.6, 0, 1);
+
+      const sorted = climateBiomes
+        .map(b => {
+          const dTemp = b.temp - temp;
+          const dMoist = b.moisture - moisture;
+          const dist = Math.hypot(dTemp, dMoist);
+          const repeatPenalty = b.key === last ? 0.4 : 0;
+          return { key: b.key, weight: (1 / (0.25 + dist)) * b.weight - repeatPenalty };
+        })
+        .sort((a, b) => b.weight - a.weight);
+      const topChoices = sorted.slice(0, 3).map((c, idx) => ({ value: c.key, weight: Math.max(0.01, c.weight - idx * 0.2) }));
+      const picked = rng.weightedPick(topChoices);
+      route.push(picked);
+      last = picked;
+    }
+    return route;
   }
 }

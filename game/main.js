@@ -55,6 +55,7 @@ export class Game {
     this.obstacleBoxes = [];
     this.collectibleMeshes = [];
     this.checkpointMeshes = [];
+    this.vineMeshes = [];
     this.rigidBodies = [];
 
     // Game state
@@ -171,6 +172,7 @@ export class Game {
     this.obstacleBodies = built.obstacleBodies;
     this.collectibleMeshes = built.collectibleMeshes;
     this.checkpointMeshes = built.checkpointMeshes;
+    this.vineMeshes = built.vineMeshes || [];
 
     document.getElementById('hud').classList.add('visible');
     document.getElementById('hud-seed').textContent = `🌱 Seed: ${seed}`;
@@ -201,6 +203,7 @@ export class Game {
     this.obstacleBodies = [];
     this.collectibleMeshes = [];
     this.checkpointMeshes = [];
+    this.vineMeshes = [];
     
     if (this.rigidBodies && this.world) {
       this.rigidBodies.forEach(rb => {

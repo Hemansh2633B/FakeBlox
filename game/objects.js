@@ -287,6 +287,7 @@ export function buildLevel(game, levelData, playerModelGroup) {
   const obstacleBodies = [];
   const collectibleMeshes = [];
   const checkpointMeshes = [];
+  const vineMeshes = [];
 
   scene.add(playerModelGroup);
 
@@ -305,6 +306,15 @@ export function buildLevel(game, levelData, playerModelGroup) {
       neon:      { roughness: 0.30, metalness: 0.20 },
       factory:   { roughness: 0.78, metalness: 0.35 },
       grasslands:{ roughness: 0.80, metalness: 0.05 },
+      desert:    { roughness: 0.92, metalness: 0.03 },
+      forest:    { roughness: 0.84, metalness: 0.06 },
+      swamp:     { roughness: 0.90, metalness: 0.08 },
+      taiga:     { roughness: 0.74, metalness: 0.12 },
+      jungle:    { roughness: 0.86, metalness: 0.06 },
+      badlands:  { roughness: 0.88, metalness: 0.10 },
+      mushroom:  { roughness: 0.38, metalness: 0.18 },
+      oceanic:   { roughness: 0.34, metalness: 0.32 },
+      dark_forest:{ roughness: 0.82, metalness: 0.12 },
     };
     const tProps = themeMatProps[p.theme] || { roughness: 0.7, metalness: 0.1 };
 
@@ -553,5 +563,41 @@ export function buildLevel(game, levelData, playerModelGroup) {
     collectibleMeshes.push(group);
   });
 
-  return { platformMeshes, platformBodies, obstacleMeshes, obstacleBodies, collectibleMeshes, checkpointMeshes };
+  // Climb vines for hill traversal support
+  (levelData.vines || []).forEach((vine, idx) => {
+    const theme = THEMES[vine.theme] || THEMES.grasslands;
+    const vineRadius = 0.14;
+    const vineGeo = new THREE.CylinderGeometry(vineRadius, vineRadius * 0.9, vine.height, 8, 1, false);
+    const vineMat = new THREE.MeshStandardMaterial({
+      color: theme.accent,
+      roughness: 0.9,
+      metalness: 0.02,
+      emissive: vine.theme === 'neon' ? theme.accent : 0x000000,
+      emissiveIntensity: vine.theme === 'neon' ? 0.2 : 0,
+    });
+    const mesh = new THREE.Mesh(vineGeo, vineMat);
+    mesh.position.copy(vine.pos);
+    mesh.castShadow = true;
+    mesh.userData = { levelObject: true, vineData: vine, idx };
+    scene.add(mesh);
+
+    const leafColor = theme.colors[1] || theme.colors[0];
+    const leafGeo = new THREE.SphereGeometry(0.16, 7, 7);
+    for (let i = 0; i < 3; i++) {
+      const leaf = new THREE.Mesh(
+        leafGeo,
+        new THREE.MeshStandardMaterial({ color: leafColor, roughness: 0.85, metalness: 0.02 })
+      );
+      leaf.position.set(
+        vine.pos.x + (i - 1) * 0.16,
+        vine.pos.y - vine.height * 0.25 + i * (vine.height * 0.25),
+        vine.pos.z + (i % 2 === 0 ? 0.12 : -0.12)
+      );
+      leaf.userData.levelObject = true;
+      scene.add(leaf);
+    }
+    vineMeshes.push(mesh);
+  });
+
+  return { platformMeshes, platformBodies, obstacleMeshes, obstacleBodies, collectibleMeshes, checkpointMeshes, vineMeshes };
 }

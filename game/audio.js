@@ -152,6 +152,9 @@ export class AudioManager {
     const freqs = {
       grasslands: [130, 196], lava: [73, 110], ice: [165, 247],
       space: [55, 82], factory: [98, 147], neon: [110, 165],
+      desert: [146, 220], forest: [123, 185], swamp: [87, 131],
+      taiga: [174, 262], jungle: [138, 207], badlands: [98, 123],
+      mushroom: [196, 294], oceanic: [110, 147], dark_forest: [82, 110],
     };
     const f = freqs[theme] || freqs.grasslands;
     this.musicOsc = [];
