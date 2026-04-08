@@ -47,6 +47,9 @@ export class AudioManager {
 
   async init() {
     if (this.ready) return;
+    const MYINSTANTS = 'https://www.myinstants.com/media/sounds/';
+    const soundUrl = (name) => `${MYINSTANTS}${name}`;
+    const loadMp3 = (path, volume = 1) => new Howl({ src: [path], format: ['mp3'], volume });
     
     // PlayTone offline helper
     const playT = (ctx, freq, dur, type, vol, start) => {
@@ -72,39 +75,42 @@ export class AudioManager {
       src.start(start);
     };
 
-    this.sounds.jump = await synthToHowl(0.3, ctx => {
-      playT(ctx, 350, 0.15, 'sine', 0.25, 0);
-      playT(ctx, 500, 0.1, 'sine', 0.2, 0.03);
-    });
-    this.sounds.land = await synthToHowl(0.15, ctx => playN(ctx, 0.08, 0.15, 0));
-    this.sounds.landHard = await synthToHowl(0.3, ctx => {
-      playN(ctx, 0.15, 0.25, 0);
-      playT(ctx, 80, 0.1, 'sine', 0.15, 0);
-    });
-    this.sounds.death = await synthToHowl(0.6, ctx => {
-      playT(ctx, 300, 0.3, 'sawtooth', 0.3, 0);
-      playT(ctx, 150, 0.4, 'sawtooth', 0.2, 0.1);
-      playN(ctx, 0.2, 0.2, 0);
-    });
-    this.sounds.checkpoint = await synthToHowl(1.0, ctx => {
-      [523, 659, 784, 1047].forEach((f, i) => playT(ctx, f, 0.3, 'triangle', 0.25, i * 0.1));
-    });
-    this.sounds.collectStar = await synthToHowl(0.4, ctx => {
-      playT(ctx, 880, 0.12, 'sine', 0.2, 0);
-      playT(ctx, 1100, 0.15, 'sine', 0.2, 0.06);
-    });
+    this.sounds.jump = loadMp3(soundUrl('cartoon-jump.mp3'), 0.85);
+    this.sounds.land = loadMp3(soundUrl('bonk-meme.mp3'), 0.35);
+    this.sounds.landHard = [
+      loadMp3(soundUrl('bonk-meme.mp3'), 0.75),
+      loadMp3(soundUrl('vine-boom-bass-boosted.mp3'), 0.38),
+    ];
+    this.sounds.death = [
+      loadMp3(soundUrl('roblox-death-sound_1.mp3'), 0.9),
+      loadMp3(soundUrl('bruh-meme.mp3'), 0.7),
+    ];
+    this.sounds.checkpoint = [
+      loadMp3(soundUrl('checkpoint-activate.mp3'), 0.9),
+      loadMp3(soundUrl('nice.mp3'), 0.35),
+    ];
+    this.sounds.collectStar = [
+      loadMp3(soundUrl('super-mario-coin-sound.mp3'), 0.9),
+      loadMp3(soundUrl('wow.mp3'), 0.35),
+    ];
     this.sounds.bounce = await synthToHowl(0.4, ctx => {
       playT(ctx, 200, 0.2, 'sine', 0.3, 0);
       playT(ctx, 600, 0.15, 'sine', 0.2, 0);
     });
-    this.sounds.levelComplete = await synthToHowl(1.5, ctx => {
+    this.sounds.levelComplete = [
+      loadMp3(soundUrl('crowd-cheer.mp3'), 0.4),
+      await synthToHowl(1.5, ctx => {
       [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => playT(ctx, f, 0.4, 'triangle', 0.2, i * 0.12));
-    });
-    this.sounds.uiClick = await synthToHowl(0.1, ctx => playT(ctx, 800, 0.05, 'square', 0.1, 0));
-    this.sounds.uiHover = await synthToHowl(0.1, ctx => playT(ctx, 600, 0.03, 'sine', 0.05, 0));
-    this.sounds.achievement = await synthToHowl(1.0, ctx => {
-      [784, 988, 1175, 1568].forEach((f, i) => playT(ctx, f, 0.35, 'sine', 0.2, i * 0.15));
-    });
+      }),
+    ];
+    this.sounds.uiClick = loadMp3(soundUrl('click-and-se.mp3'), 0.35);
+    this.sounds.uiHover = loadMp3(soundUrl('click-and-se.mp3'), 0.2);
+    this.sounds.achievement = [
+      loadMp3(soundUrl('nice.mp3'), 0.4),
+      await synthToHowl(1.0, ctx => {
+        [784, 988, 1175, 1568].forEach((f, i) => playT(ctx, f, 0.35, 'sine', 0.2, i * 0.15));
+      }),
+    ];
 
     this.setMusicVol(this.musicVol);
     this.setSfxVol(this.sfxVol);
@@ -121,12 +127,24 @@ export class AudioManager {
     Howler.volume(v);
   }
 
+  isFiniteVec3(pos) {
+    return Number.isFinite(pos?.x) && Number.isFinite(pos?.y) && Number.isFinite(pos?.z);
+  }
+
+  pickSound(id) {
+    const sound = this.sounds[id];
+    if (Array.isArray(sound)) return sound[(Math.random() * sound.length) | 0];
+    return sound;
+  }
+
   playSpatial(id, pos) {
     if (!this.ready || !this.sounds[id] || !this.userInteracted) return;
-    const sId = this.sounds[id].play();
-    if (pos) {
-      this.sounds[id].pos(pos.x, pos.y, pos.z, sId);
-      this.sounds[id].pannerAttr({ panningModel: 'HRTF', distanceModel: 'inverse', refDistance: 3, maxDistance: 30, rolloffFactor: 1 });
+    const sound = this.pickSound(id);
+    if (!sound) return;
+    const sId = sound.play();
+    if (pos && this.isFiniteVec3(pos)) {
+      sound.pos(pos.x, pos.y, pos.z, sId);
+      sound.pannerAttr({ panningModel: 'HRTF', distanceModel: 'inverse', refDistance: 3, maxDistance: 30, rolloffFactor: 1 });
     }
   }
 
@@ -152,6 +170,9 @@ export class AudioManager {
     const freqs = {
       grasslands: [130, 196], lava: [73, 110], ice: [165, 247],
       space: [55, 82], factory: [98, 147], neon: [110, 165],
+      desert: [146, 220], forest: [123, 185], swamp: [87, 131],
+      taiga: [174, 262], jungle: [138, 207], badlands: [98, 123],
+      mushroom: [196, 294], oceanic: [110, 147], dark_forest: [82, 110],
     };
     const f = freqs[theme] || freqs.grasslands;
     this.musicOsc = [];
@@ -187,8 +208,12 @@ export class AudioManager {
   }
 
   updateListener(pos, dir) {
-    if (pos) Howler.pos(pos.x, pos.y, pos.z);
-    if (dir) Howler.orientation(dir.x, dir.y, dir.z, 0, 1, 0); // Assuming up is (0,1,0)
+    if (pos && this.isFiniteVec3(pos)) {
+      Howler.pos(pos.x, pos.y, pos.z);
+    }
+    if (dir && this.isFiniteVec3(dir)) {
+      Howler.orientation(dir.x, dir.y, dir.z, 0, 1, 0); // Assuming up is (0,1,0)
+    }
   }
 }
 

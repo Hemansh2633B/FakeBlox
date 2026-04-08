@@ -13,7 +13,8 @@
 
 ## ✨ Features
 
-- Procedural level generation driven by a 64-bit integer seed + PRNG
+- Procedural, seed-based level generation
+- Massive biome/scene variety inspired by Minecraft overworld, caves, Nether, and End regions
 - Difficulty presets: easy, normal, hard, extreme
 - Endless run mode
 - Daily challenge with unique seed
@@ -23,6 +24,17 @@
 - Achievement toast notifications
 - Post-processing effects (Three.js)
 - Local storage for achievements and best runs
+
+---
+
+## 🌍 Biomes & Scenes
+
+The generator now includes broad biome coverage across:
+
+- **Overworld**: Plains (including Sunflower Plains), Forest families, Taiga variants, Desert, Jungle variants, Badlands variants, mountain ranges, snowy/ice regions, swamps, ocean temperatures/depths, and unique biomes like Mushroom Fields, Meadow, and Cherry Grove.
+- **Caves**: Lush Caves, Dripstone Caves, and Deep Dark.
+- **Nether**: Nether Wastes, Crimson Forest, Warped Forest, Soul Sand Valley, and Basalt Deltas.
+- **The End**: Main End + Highlands, Midlands, Barrens, and Small Islands.
 
 ---
 

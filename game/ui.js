@@ -1,6 +1,6 @@
 // game/ui.js — DOM manipulation, screen management, event wiring
 import { audio } from './audio.js';
-import { achievements } from './systems.js';
+import { achievements, saveManager } from './systems.js';
 
 function randomInt(maxExclusive) {
   if (window.crypto && window.crypto.getRandomValues) {
@@ -118,6 +118,26 @@ export function wireUI(game) {
       achievements.unlock('social');
     });
   });
+
+  // Graphics settings
+  const qualityEl = document.getElementById('graphics-quality');
+  const fpsEl = document.getElementById('fps-limit');
+  const backendEl = document.getElementById('renderer-backend');
+  const savedGraphics = saveManager.load('graphics', { quality: 'ultra', fpsCap: 0, backend: 'auto' });
+  qualityEl.value = savedGraphics.quality || 'ultra';
+  fpsEl.value = String(savedGraphics.fpsCap ?? 0);
+  backendEl.value = savedGraphics.backend || 'auto';
+  const applyGraphics = () => {
+    game.applyGraphicsSettings({
+      quality: qualityEl.value,
+      fpsCap: Number(fpsEl.value),
+      backend: backendEl.value,
+    });
+  };
+  qualityEl.addEventListener('change', applyGraphics);
+  fpsEl.addEventListener('change', applyGraphics);
+  backendEl.addEventListener('change', applyGraphics);
+  applyGraphics();
 
   // Volume sliders
   document.getElementById('music-vol').addEventListener('input', (e) => {

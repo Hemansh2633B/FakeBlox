@@ -55,6 +55,7 @@ export class Game {
     this.obstacleBoxes = [];
     this.collectibleMeshes = [];
     this.checkpointMeshes = [];
+    this.vineMeshes = [];
     this.rigidBodies = [];
 
     // Game state
@@ -76,12 +77,26 @@ export class Game {
     this.envParticles = [];
     this.currentTheme = null;
     this.dirLight = null;
+    this.fpsCap = 0;
+    this.lastFrameTime = 0;
+    this.graphicsSettings = {
+      quality: 'ultra',
+      backend: 'auto',
+      fpsCap: 0,
+    };
 
     this.stats = saveManager.load('stats', { totalDeaths: 0, totalStars: 0, levelsCompleted: 0, playTime: 0 });
   }
 
   async init() {
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+      alpha: false,
+      depth: true,
+      stencil: false,
+      failIfMajorPerformanceCaveat: false,
+    });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
@@ -89,6 +104,7 @@ export class Game {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     document.body.prepend(this.renderer.domElement);
+    this.lastFrameTime = performance.now();
 
     this.scene = new THREE.Scene();
     this.threeCamera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 500);
@@ -128,6 +144,38 @@ export class Game {
     document.getElementById('loading-bar').style.width = '100%';
     setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 500);
     this.loop();
+  }
+
+  applyGraphicsSettings(settings = {}) {
+    this.graphicsSettings = { ...this.graphicsSettings, ...settings };
+    this.fpsCap = Number(this.graphicsSettings.fpsCap) || 0;
+    saveManager.save('graphics', this.graphicsSettings);
+
+    if (!this.renderer) return;
+
+    const quality = this.graphicsSettings.quality || 'ultra';
+    const qualityPresets = {
+      ultra: { pixelRatio: 2, shadows: true, shadowSize: 4096, postFX: true, toneExposure: 1.1 },
+      high: { pixelRatio: 1.75, shadows: true, shadowSize: 3072, postFX: true, toneExposure: 1.05 },
+      balanced: { pixelRatio: 1.35, shadows: true, shadowSize: 2048, postFX: true, toneExposure: 1.0 },
+      performance: { pixelRatio: 1, shadows: false, shadowSize: 1024, postFX: false, toneExposure: 0.98 },
+    };
+    const preset = qualityPresets[quality] || qualityPresets.ultra;
+    const dprCap = Math.max(1, Number(preset.pixelRatio));
+
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap));
+    this.renderer.shadowMap.enabled = !!preset.shadows;
+    this.renderer.toneMappingExposure = preset.toneExposure;
+    this.postprocessingDisabled = !preset.postFX;
+
+    if (this.dirLight?.shadow?.mapSize) {
+      this.dirLight.shadow.mapSize.setScalar(preset.shadowSize);
+      this.dirLight.shadow.needsUpdate = true;
+    }
+
+    if (this.graphicsSettings.backend === 'webgl') {
+      this.showNotification('ℹ️ Browser uses WebGL backend in compatible mode.');
+    }
   }
 
   startLevel(seed, difficulty, endless = false) {
@@ -171,6 +219,7 @@ export class Game {
     this.obstacleBodies = built.obstacleBodies;
     this.collectibleMeshes = built.collectibleMeshes;
     this.checkpointMeshes = built.checkpointMeshes;
+    this.vineMeshes = built.vineMeshes || [];
 
     document.getElementById('hud').classList.add('visible');
     document.getElementById('hud-seed').textContent = `🌱 Seed: ${seed}`;
@@ -201,6 +250,7 @@ export class Game {
     this.obstacleBodies = [];
     this.collectibleMeshes = [];
     this.checkpointMeshes = [];
+    this.vineMeshes = [];
     
     if (this.rigidBodies && this.world) {
       this.rigidBodies.forEach(rb => {
@@ -380,6 +430,16 @@ export class Game {
   loop() {
     if (this.perfStats) this.perfStats.begin();
     requestAnimationFrame(() => this.loop());
+    const now = performance.now();
+    if (this.fpsCap > 0) {
+      const minFrameTime = 1000 / this.fpsCap;
+      const elapsed = now - this.lastFrameTime;
+      if (elapsed < minFrameTime) {
+        if (this.perfStats) this.perfStats.end();
+        return;
+      }
+      this.lastFrameTime = now;
+    }
     const dt = Math.min(this.clock.getDelta(), 0.05);
 
     TWEEN.update();
