@@ -49,9 +49,118 @@
           <a class="btn" href="the-end.html">Open The End</a>
         </article>
       </div>
-    </section>
-
-    <footer>FakeBlox · Main landing page</footer>
-  </main>
+    </div>
+    <div class="menu-section">
+      <label>🎛️ Graphics & Performance</label>
+      <div class="settings-row">
+        <span>Quality</span>
+        <select id="graphics-quality">
+          <option value="ultra" selected>Ultra</option>
+          <option value="high">High</option>
+          <option value="balanced">Balanced</option>
+          <option value="performance">Performance</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <span>FPS</span>
+        <select id="fps-limit">
+          <option value="0" selected>Unlimited</option>
+          <option value="240">240</option>
+          <option value="165">165</option>
+          <option value="144">144</option>
+          <option value="120">120</option>
+          <option value="60">60</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <span>Renderer</span>
+        <select id="renderer-backend">
+          <option value="auto" selected>Auto (WebGL2)</option>
+          <option value="webgl">WebGL Compatible</option>
+        </select>
+      </div>
+      <div class="settings-hint">Vulkan/OpenGL desktop APIs are not directly selectable in browsers. Auto picks the fastest WebGL path available.</div>
+    </div>
+    <div class="menu-section">
+      <label>🔊 Audio</label>
+      <div class="settings-row">
+        <span>Music</span>
+        <input type="range" min="0" max="100" value="50" id="music-vol">
+      </div>
+      <div class="settings-row">
+        <span>SFX</span>
+        <input type="range" min="0" max="100" value="80" id="sfx-vol">
+      </div>
+    </div>
+    <div class="menu-section" style="padding:0.8rem 2rem;">
+      <button class="btn btn-play" id="btn-play">▶ PLAY</button>
+      <button class="btn btn-daily" id="btn-daily">📅 Daily Challenge</button>
+      <button class="btn btn-endless" id="btn-endless">♾️ Endless Mode</button>
+    </div>
+  </div>
+  <div id="hud">
+    <div class="hud-timer" id="hud-timer">00:00.000</div>
+    <div class="hud-stats">
+      <div id="hud-deaths">💀 0</div>
+      <div id="hud-stars">⭐ 0 / 0</div>
+    </div>
+    <div class="hud-checkpoint" id="hud-checkpoint">📍 Checkpoint 0/0</div>
+    <div class="hud-seed" id="hud-seed" title="Click to copy seed">🌱 Seed: ---</div>
+    <div class="hud-notification" id="hud-notify"></div>
+  </div>
+  <div id="pause-menu">
+    <h2>⏸️ PAUSED</h2>
+    <button class="btn btn-primary" id="btn-resume">▶ Resume</button>
+    <button class="btn btn-secondary" id="btn-restart">🔄 Restart</button>
+    <button class="btn btn-secondary" id="btn-quit">🏠 Main Menu</button>
+  </div>
+  <div id="end-screen">
+    <h2>🎉 LEVEL COMPLETE!</h2>
+    <div class="end-stats">
+      <div class="end-stars" id="end-stars">⭐⭐⭐</div>
+      <div class="end-score" id="end-score">Score: 0</div>
+      <div id="end-time">⏱️ Time: 00:00.000</div>
+      <div id="end-deaths">💀 Deaths: 0</div>
+      <div id="end-collected">⭐ Stars: 0/0</div>
+    </div>
+    <button class="btn btn-primary" id="btn-play-again">🔄 Play Again</button>
+    <button class="btn btn-secondary" id="btn-new-seed">🎲 New Seed</button>
+    <button class="btn btn-secondary" id="btn-end-menu">🏠 Main Menu</button>
+    <button class="btn btn-secondary" id="btn-copy-seed">📋 Copy Seed</button>
+  </div>
+  <div id="touch-controls">
+    <div id="joystick-zone">
+      <div class="joystick-base">
+        <div class="joystick-knob" id="joystick-knob"></div>
+      </div>
+    </div>
+    <div class="touch-jump-btn" id="touch-jump">JUMP</div>
+    <div class="touch-sprint-btn" id="touch-sprint">RUN</div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="death-overlay"></div>
+  <div class="achievement-toast" id="achievement-toast">
+    <div class="ach-icon">🏆</div>
+    <div>
+      <div class="ach-text" id="ach-text">Achievement!</div>
+      <div class="ach-desc" id="ach-desc">Description</div>
+    </div>
+  </div>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://esm.sh/three@0.170.0",
+    "three/addons/": "https://esm.sh/three@0.170.0/examples/jsm/",
+    "@dimforge/rapier3d-compat": "https://esm.sh/@dimforge/rapier3d-compat@0.14.0",
+    "howler": "https://esm.sh/howler@2.2.4",
+    "postprocessing": "https://esm.sh/postprocessing@6.36.2?external=three",
+    "@tweenjs/tween.js": "https://esm.sh/@tweenjs/tween.js@23.1.2",
+    "stats.js": "https://esm.sh/stats.js@0.17.0",
+    "troika-three-text": "https://esm.sh/troika-three-text@0.49.0?external=three"
+  }
+}
+</script>
+<script type="module" src="game/main.js"></script>
 </body>
 </html>
