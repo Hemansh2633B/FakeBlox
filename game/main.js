@@ -106,7 +106,7 @@ export class Game {
     document.body.appendChild(this.perfStats.dom);
 
     await RAPIER.init();
-    this.world = new RAPIER.World({ x: 0, y: -CONFIG.player.gravity, z: 0 });
+    this.world = new RAPIER.World({ x: 0, y: CONFIG.player.gravity, z: 0 });
 
     this.particles = new ParticleSystem(this.scene);
 

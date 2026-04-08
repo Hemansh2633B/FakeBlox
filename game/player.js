@@ -177,7 +177,7 @@ export function updatePlayer(game, dt) {
 
   const grav = game.playerVel.y <= 0 ? P.gravity * P.fallGravMul : P.gravity;
   const spaceMul = game.currentTheme === 'space' ? 0.5 : 1.0;
-  game.playerVel.y -= grav * spaceMul * dt;
+  game.playerVel.y += grav * spaceMul * dt;
   game.playerVel.y = Math.max(game.playerVel.y, -40); // terminal velocity
 
   const desiredMovement = new THREE.Vector3(game.playerVel.x * dt, game.playerVel.y * dt, game.playerVel.z * dt);
@@ -479,6 +479,19 @@ export function updateCamera(game, dt) {
   game.camPhi -= game.input.camDelta.y * C.sensitivity;
   game.camPhi = THREE.MathUtils.clamp(game.camPhi, THREE.MathUtils.degToRad(C.vMin), THREE.MathUtils.degToRad(C.vMax));
 
+  // Roblox-like follow camera:
+  // keep the camera settling behind the character's facing direction.
+  const followTheta = game.playerModel?.group?.rotation
+    ? game.playerModel.group.rotation.y + Math.PI
+    : game.camTheta;
+  let thetaDiff = followTheta - game.camTheta;
+  while (thetaDiff > Math.PI) thetaDiff -= Math.PI * 2;
+  while (thetaDiff < -Math.PI) thetaDiff += Math.PI * 2;
+  const autoFollowStrength = game.input.shiftLocked ? 0.0 : 6.5;
+  if (autoFollowStrength > 0) {
+    game.camTheta += thetaDiff * Math.min(1, autoFollowStrength * dt);
+  }
+
   const hVel = new THREE.Vector3(game.playerVel.x, 0, game.playerVel.z);
   const lookAhead = hVel.clone().normalize().multiplyScalar(C.lookAhead * Math.min(1, hVel.length() / 10));
 
@@ -507,7 +520,7 @@ export function updateCamera(game, dt) {
   }
 
   const targetPos = game.playerPos.clone().add(
-    new THREE.Vector3(lookAhead.x, C.height + bobOffset + shakeY, lookAhead.z)
+    new THREE.Vector3(lookAhead.x, C.height + 0.8 + bobOffset + shakeY, lookAhead.z)
   ).add(shiftOffset);
   game.camTarget.lerp(targetPos, C.smooth * 2);
 

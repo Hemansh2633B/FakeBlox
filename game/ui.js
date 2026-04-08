@@ -2,6 +2,24 @@
 import { audio } from './audio.js';
 import { achievements } from './systems.js';
 
+function randomInt(maxExclusive) {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    return buf[0] % maxExclusive;
+  }
+  return Math.floor(Math.random() * maxExclusive);
+}
+
+function generateSeed() {
+  const adjectives = ['swift', 'lucky', 'neon', 'frost', 'ember', 'nova', 'wild', 'shadow', 'golden', 'echo'];
+  const nouns = ['fox', 'comet', 'citadel', 'runner', 'isle', 'forge', 'vault', 'summit', 'orbit', 'harbor'];
+  const left = adjectives[randomInt(adjectives.length)];
+  const right = nouns[randomInt(nouns.length)];
+  const suffix = String(1000 + randomInt(9000));
+  return `${left}-${right}-${suffix}`;
+}
+
 /**
  * Wires all DOM event listeners for menus, buttons, sliders, etc.
  * @param {import('./main.js').Game} game
@@ -29,10 +47,7 @@ export function wireUI(game) {
 
   // Random seed
   document.getElementById('btn-random-seed').addEventListener('click', () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let seed = '';
-    for (let i = 0; i < 8; i++) seed += chars[Math.floor(Math.random() * chars.length)];
-    document.getElementById('seed-input').value = seed;
+    document.getElementById('seed-input').value = generateSeed();
     audio.init();
     audio.uiClick();
   });
@@ -49,7 +64,7 @@ export function wireUI(game) {
 
   // Play
   document.getElementById('btn-play').addEventListener('click', () => {
-    const seed = document.getElementById('seed-input').value || 'random_' + Date.now();
+    const seed = document.getElementById('seed-input').value || generateSeed();
     const diff = document.querySelector('.diff-btn.active')?.dataset.diff || 'normal';
     game.startLevel(seed, diff);
   });
@@ -64,7 +79,7 @@ export function wireUI(game) {
 
   // Endless mode
   document.getElementById('btn-endless').addEventListener('click', () => {
-    const seed = document.getElementById('seed-input').value || 'endless_' + Date.now();
+    const seed = document.getElementById('seed-input').value || `endless-${generateSeed()}`;
     const diff = document.querySelector('.diff-btn.active')?.dataset.diff || 'normal';
     game.startLevel(seed, diff, true);
   });
@@ -124,6 +139,8 @@ export function wireUI(game) {
         b.classList.toggle('active', b.dataset.diff === d);
       });
     }
+  } else if (!document.getElementById('seed-input').value) {
+    document.getElementById('seed-input').value = generateSeed();
   }
 
   // Prevent context menu globally
