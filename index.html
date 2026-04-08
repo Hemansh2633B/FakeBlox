@@ -1,121 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Obby Runner — Seed-Based 3D Obstacle Course</title>
-<meta name="description" content="A web-based 3D obby game with infinite procedurally generated levels. Share seeds with friends!">
-<meta property="og:title" content="Obby Runner — Seed-Based 3D Obstacle Course">
-<meta property="og:description" content="A web-based 3D obby game with infinite procedurally generated levels. Share seeds with friends! 100% open source.">
-<link rel="stylesheet" href="style.css">
-<link rel="icon" href="data:,">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FakeBlox Main Page</title>
+  <link rel="stylesheet" href="pages.css" />
 </head>
 <body>
-<div id="loading-screen">
-  <div class="loading-text">Loading Obby Runner...</div>
-  <div class="loading-bar-bg"><div class="loading-bar-fill" id="loading-bar"></div></div>
-</div>
-<div id="ui-layer">
-  <div id="main-menu">
-    <div class="menu-title">🏃 OBBY RUNNER</div>
-    <div class="menu-subtitle">Seed-Based Obstacle Course</div>
-    <div class="menu-section">
-      <label>🌱 Level Seed</label>
-      <div class="seed-row">
-        <input type="text" class="seed-input" id="seed-input" placeholder="Enter seed or leave empty for random..." value="">
-        <button class="btn btn-secondary" id="btn-random-seed">🎲</button>
-        <button class="btn btn-secondary" id="btn-paste-seed">📋</button>
+  <nav>
+    <div class="container nav-inner">
+      <div class="brand">🧱 FakeBlox</div>
+      <div class="links">
+        <a href="index.html">Main</a>
+        <a href="overworld.html">Overworld</a>
+        <a href="nether.html">Nether</a>
+        <a href="the-end.html">The End</a>
+        <a href="game.html">Play Game</a>
       </div>
     </div>
-    <div class="menu-section">
-      <label>⚙️ Difficulty</label>
-      <div class="difficulty-row">
-        <button class="diff-btn" data-diff="easy">😊 Easy</button>
-        <button class="diff-btn active" data-diff="normal">😐 Normal</button>
-        <button class="diff-btn" data-diff="hard">😈 Hard</button>
-        <button class="diff-btn" data-diff="extreme">💀 Extreme</button>
+  </nav>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Welcome to FakeBlox Biome Explorer</h1>
+      <p>
+        This main landing page links to three world landing pages: Overworld, Nether, and The End.
+        Browse biome information by dimension and jump into the game anytime.
+      </p>
+      <p><a class="btn" href="game.html">▶ Launch Obby Runner</a></p>
+    </section>
+
+    <section>
+      <h2 class="section-title">Dimension Landing Pages</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>🌍 Overworld</h3>
+          <p>Explore plains, forests, caves, mountains, swamps, oceans, and more.</p>
+          <a class="btn" href="overworld.html">Open Overworld</a>
+        </article>
+        <article class="card">
+          <h3>🔥 Nether</h3>
+          <p>Review all five Nether biomes and their hazards and resources.</p>
+          <a class="btn" href="nether.html">Open Nether</a>
+        </article>
+        <article class="card">
+          <h3>🌌 The End</h3>
+          <p>See End biome zones from the dragon island to remote outer islands.</p>
+          <a class="btn" href="the-end.html">Open The End</a>
+        </article>
       </div>
-    </div>
-    <div class="menu-section">
-      <label>🔊 Audio</label>
-      <div class="settings-row">
-        <span>Music</span>
-        <input type="range" min="0" max="100" value="50" id="music-vol">
-      </div>
-      <div class="settings-row">
-        <span>SFX</span>
-        <input type="range" min="0" max="100" value="80" id="sfx-vol">
-      </div>
-    </div>
-    <div class="menu-section" style="padding:0.8rem 2rem;">
-      <button class="btn btn-play" id="btn-play">▶ PLAY</button>
-      <button class="btn btn-daily" id="btn-daily">📅 Daily Challenge</button>
-      <button class="btn btn-endless" id="btn-endless">♾️ Endless Mode</button>
-    </div>
-  </div>
-  <div id="hud">
-    <div class="hud-timer" id="hud-timer">00:00.000</div>
-    <div class="hud-stats">
-      <div id="hud-deaths">💀 0</div>
-      <div id="hud-stars">⭐ 0 / 0</div>
-    </div>
-    <div class="hud-checkpoint" id="hud-checkpoint">📍 Checkpoint 0/0</div>
-    <div class="hud-seed" id="hud-seed" title="Click to copy seed">🌱 Seed: ---</div>
-    <div class="hud-notification" id="hud-notify"></div>
-  </div>
-  <div id="pause-menu">
-    <h2>⏸️ PAUSED</h2>
-    <button class="btn btn-primary" id="btn-resume">▶ Resume</button>
-    <button class="btn btn-secondary" id="btn-restart">🔄 Restart</button>
-    <button class="btn btn-secondary" id="btn-quit">🏠 Main Menu</button>
-  </div>
-  <div id="end-screen">
-    <h2>🎉 LEVEL COMPLETE!</h2>
-    <div class="end-stats">
-      <div class="end-stars" id="end-stars">⭐⭐⭐</div>
-      <div class="end-score" id="end-score">Score: 0</div>
-      <div id="end-time">⏱️ Time: 00:00.000</div>
-      <div id="end-deaths">💀 Deaths: 0</div>
-      <div id="end-collected">⭐ Stars: 0/0</div>
-    </div>
-    <button class="btn btn-primary" id="btn-play-again">🔄 Play Again</button>
-    <button class="btn btn-secondary" id="btn-new-seed">🎲 New Seed</button>
-    <button class="btn btn-secondary" id="btn-end-menu">🏠 Main Menu</button>
-    <button class="btn btn-secondary" id="btn-copy-seed">📋 Copy Seed</button>
-  </div>
-  <div id="touch-controls">
-    <div id="joystick-zone">
-      <div class="joystick-base">
-        <div class="joystick-knob" id="joystick-knob"></div>
-      </div>
-    </div>
-    <div class="touch-jump-btn" id="touch-jump">JUMP</div>
-    <div class="touch-sprint-btn" id="touch-sprint">RUN</div>
-  </div>
-  <div id="crosshair"></div>
-  <div id="death-overlay"></div>
-  <div class="achievement-toast" id="achievement-toast">
-    <div class="ach-icon">🏆</div>
-    <div>
-      <div class="ach-text" id="ach-text">Achievement!</div>
-      <div class="ach-desc" id="ach-desc">Description</div>
-    </div>
-  </div>
-</div>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://esm.sh/three@0.170.0",
-    "three/addons/": "https://esm.sh/three@0.170.0/examples/jsm/",
-    "@dimforge/rapier3d-compat": "https://esm.sh/@dimforge/rapier3d-compat@0.14.0",
-    "howler": "https://esm.sh/howler@2.2.4",
-    "postprocessing": "https://esm.sh/postprocessing@6.36.2?external=three",
-    "@tweenjs/tween.js": "https://esm.sh/@tweenjs/tween.js@23.1.2",
-    "stats.js": "https://esm.sh/stats.js@0.17.0",
-    "troika-three-text": "https://esm.sh/troika-three-text@0.49.0?external=three"
-  }
-}
-</script>
-<script type="module" src="game/main.js"></script>
+    </section>
+
+    <footer>FakeBlox · Main landing page</footer>
+  </main>
 </body>
 </html>
