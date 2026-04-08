@@ -1,61 +1,109 @@
+
 # FakeBlox
 
-A browser-based 3D obstacle course game built as a single-page HTML app.
+> A browser-based 3D obstacle course game (obby runner) with procedural generation, endless mode, and daily challenges.
 
-## Overview
+---
 
-`game.html` is a seed-based obby runner with procedurally generated levels, multiple difficulty settings, endless mode, daily challenges, and simple audio + particle effects.
+## 🕹️ Overview
 
-## Features
+**FakeBlox** is a single-page web game inspired by classic obby runners. It features seed-based procedural level generation, multiple difficulty settings, endless mode, daily challenges, and simple audio/particle effects—all in your browser.
 
-- Seed-based procedural level generation
+---
+
+## ✨ Features
+
+- Procedural, seed-based level generation
 - Difficulty presets: easy, normal, hard, extreme
 - Endless run mode
-- Daily challenge seed generation
-- In-game HUD with timer, checkpoint tracking, and seed copy support
-- Touch controls for mobile devices
-- Procedural audio using the Web Audio API
+- Daily challenge with unique seed
+- In-game HUD: timer, checkpoints, seed copy
+- Touch controls for mobile
+- Procedural audio (Web Audio API)
 - Achievement toast notifications
-- Post-processing effects using Three.js
+- Post-processing effects (Three.js)
+- Local storage for achievements and best runs
 
-## How to run
+---
 
-1. Open `game.html` in a modern browser.
-2. Alternatively, serve the folder using a local web server and navigate to:
+## 🚀 Getting Started
+
+### Play Instantly
+
+Just open `game.html` in any modern browser.
+
+### Local Web Server (Recommended)
 
 ```bash
 cd /workspaces/FakeBlox
 python3 -m http.server 8000
 ```
+Then open [http://localhost:8000/game.html](http://localhost:8000/game.html) in your browser.
 
-Then open `http://localhost:8000/game.html`.
+---
 
-## Controls
+## 🎮 Controls
 
-- `W`, `A`, `S`, `D` - Move
-- `Space` - Jump
-- `Shift` - Sprint
-- `Esc` - Pause
-- Mouse drag - Camera look
-- Mouse wheel - Zoom
-- Touch controls appear on mobile devices
+| Action         | Keyboard/Mouse         | Touch (Mobile)         |
+| -------------- | ---------------------- | ---------------------- |
+| Move           | W, A, S, D             | On-screen joystick     |
+| Jump           | Space                  | Jump button            |
+| Sprint         | Shift                  | Sprint button          |
+| Pause          | Esc                    | Pause button           |
+| Camera Look    | Mouse drag             | Drag on screen         |
+| Zoom           | Mouse wheel            | Pinch/Zoom gesture     |
 
-## Seed sharing
+---
 
-- Enter a custom seed in the menu to replay or share a specific level.
-- Click the HUD seed or end-screen copy button to copy the current seed.
-- URL parameters supported:
+## 🌱 Seed Sharing & URL Parameters
+
+- Enter a custom seed in the menu to replay/share a level
+- Click the HUD seed or end-screen copy button to copy the current seed
+- Supported URL parameters:
   - `?seed=your_seed`
   - `?difficulty=easy|normal|hard|extreme`
 
-## Notes
+---
 
-- The game is implemented entirely in `game.html`.
-- Three.js is loaded via CDN using an import map.
-- Local storage is used for saving achievements and best runs.
+## 📁 File Structure
 
-## License
+```
+FakeBlox/
+├── game.html         # Main game (single-page app)
+├── style.css         # Game styles
+├── fonts/            # Fonts used in-game
+├── game/             # Game logic modules (JS)
+│   ├── ai.js
+│   ├── audio.js
+│   ├── generation.js
+│   ├── input.js
+│   ├── main.js
+│   ├── objects.js
+│   ├── particles.js
+│   ├── player.js
+│   ├── systems.js
+│   └── ui.js
+├── backup/           # Backup files
+│   └── game.html
+├── index.html        # (Optional) Landing or redirect
+├── dump.js           # (Optional) Debug/utility
+└── README.md         # This file
+```
 
-This project is licensed under the MIT License.
+---
 
-Copyright (c) 2026 Hemanshu Kant Choursiya
+## 🖼️ Screenshots
+
+<!-- Add screenshots here -->
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+---
+
+## 📜 License
+
+MIT License © 2026 Hemanshu Kant Choursiya
