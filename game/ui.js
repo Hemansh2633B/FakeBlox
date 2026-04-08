@@ -12,12 +12,10 @@ function randomInt(maxExclusive) {
 }
 
 function generateSeed() {
-  const adjectives = ['swift', 'lucky', 'neon', 'frost', 'ember', 'nova', 'wild', 'shadow', 'golden', 'echo'];
-  const nouns = ['fox', 'comet', 'citadel', 'runner', 'isle', 'forge', 'vault', 'summit', 'orbit', 'harbor'];
-  const left = adjectives[randomInt(adjectives.length)];
-  const right = nouns[randomInt(nouns.length)];
-  const suffix = String(1000 + randomInt(9000));
-  return `${left}-${right}-${suffix}`;
+  // Generate an unsigned 64-bit integer seed represented as a decimal string.
+  const hi = BigInt(randomInt(0x100000000));
+  const lo = BigInt(randomInt(0x100000000));
+  return ((hi << 32n) | lo).toString();
 }
 
 /**
