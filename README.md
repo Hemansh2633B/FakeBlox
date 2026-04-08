@@ -63,6 +63,7 @@ Then open [http://localhost:8000/game.html](http://localhost:8000/game.html) in 
 | Sprint         | Shift                  | Sprint button          |
 | Pause          | Esc                    | Pause button           |
 | Camera Look    | Mouse drag             | Drag on screen         |
+| Camera Mode    | V or F (toggle)        | —                      |
 | Zoom           | Mouse wheel            | Pinch/Zoom gesture     |
 
 ---

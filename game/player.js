@@ -502,15 +502,19 @@ export function updateCamera(game, dt) {
   game.camPhi -= game.input.camDelta.y * C.sensitivity;
   game.camPhi = THREE.MathUtils.clamp(game.camPhi, THREE.MathUtils.degToRad(C.vMin), THREE.MathUtils.degToRad(C.vMax));
 
+  const usingLookInput = game.input.camDelta.lengthSq() > 0.0001;
+  game.lookInputCooldown = usingLookInput ? 0.45 : Math.max(0, (game.lookInputCooldown || 0) - dt);
+
   // Roblox-like follow camera:
-  // keep the camera settling behind the character's facing direction.
+  // keep the camera settling behind the character's facing direction after
+  // the player stops moving the mouse, so orbit can "float" while looking around.
   const followTheta = game.playerModel?.group?.rotation
     ? game.playerModel.group.rotation.y + Math.PI
     : game.camTheta;
   let thetaDiff = followTheta - game.camTheta;
   while (thetaDiff > Math.PI) thetaDiff -= Math.PI * 2;
   while (thetaDiff < -Math.PI) thetaDiff += Math.PI * 2;
-  const autoFollowStrength = game.input.shiftLocked ? 0.0 : 6.5;
+  const autoFollowStrength = game.input.shiftLocked || game.lookInputCooldown > 0 ? 0.0 : 3.8;
   if (autoFollowStrength > 0) {
     game.camTheta += thetaDiff * Math.min(1, autoFollowStrength * dt);
   }
@@ -552,28 +556,47 @@ export function updateCamera(game, dt) {
 
   const sinPhi = Math.sin(game.camPhi);
   const cosPhi = Math.cos(game.camPhi);
-  const desiredPos = new THREE.Vector3(
+  const thirdPersonDesiredPos = new THREE.Vector3(
     game.camTarget.x + game.camDist * sinPhi * Math.sin(game.camTheta),
     game.camTarget.y + game.camDist * cosPhi,
     game.camTarget.z + game.camDist * sinPhi * Math.cos(game.camTheta)
   );
 
-  const dir = desiredPos.clone().sub(game.camTarget).normalize();
-  const maxDist = desiredPos.distanceTo(game.camTarget);
+  const firstPersonHeadPos = game.playerPos.clone().add(new THREE.Vector3(0, CONFIG.player.height * 0.42 + 0.25 + shakeY * 0.6, 0));
+  const blendTarget = game.cameraMode === 'first-person' ? 1 : 0;
+  game.firstPersonBlend = THREE.MathUtils.lerp(game.firstPersonBlend || 0, blendTarget, Math.min(1, dt * 9));
+  const blendedDesiredPos = thirdPersonDesiredPos.clone().lerp(firstPersonHeadPos, game.firstPersonBlend);
+
+  const dir = blendedDesiredPos.clone().sub(game.camTarget).normalize();
+  const maxDist = blendedDesiredPos.distanceTo(game.camTarget);
   const ray = new THREE.Raycaster(game.camTarget, dir, 0, maxDist);
   const hits = ray.intersectObjects(game.platformMeshes, false);
 
   if (hits.length > 0) {
-    const hitDist = Math.max(hits[0].distance - C.collPad, 2);
+    const minDist = THREE.MathUtils.lerp(0.06, 2, 1 - game.firstPersonBlend);
+    const hitDist = Math.max(hits[0].distance - C.collPad, minDist);
     const clampedPos = game.camTarget.clone().add(dir.multiplyScalar(hitDist));
     game.camPos.lerp(clampedPos, C.smooth * 3);
   } else {
-    game.camPos.lerp(desiredPos, C.smooth);
+    const smooth = THREE.MathUtils.lerp(C.smooth * 1.6, C.smooth, 1 - game.firstPersonBlend);
+    game.camPos.lerp(blendedDesiredPos, smooth);
   }
 
   game.threeCamera.position.copy(game.camPos);
-  game.threeCamera.lookAt(game.camTarget);
-  audio.updateListener(game.camPos, game.camTarget.clone().sub(game.camPos).normalize());
+  let listenerForward;
+  if (game.firstPersonBlend > 0.96) {
+    const lookDir = new THREE.Vector3(
+      Math.sin(game.camPhi) * Math.sin(game.camTheta),
+      Math.cos(game.camPhi),
+      Math.sin(game.camPhi) * Math.cos(game.camTheta)
+    );
+    listenerForward = lookDir;
+    game.threeCamera.lookAt(game.camPos.clone().add(lookDir));
+  } else {
+    listenerForward = game.camTarget.clone().sub(game.camPos).normalize();
+    game.threeCamera.lookAt(game.camTarget);
+  }
+  audio.updateListener(game.camPos, listenerForward);
 
   if (game.dirLight) {
     game.dirLight.position.set(game.playerPos.x + 30, game.playerPos.y + 50, game.playerPos.z + 30);

@@ -44,6 +44,9 @@ export class Game {
     this.camTheta = 0;
     this.camPhi = Math.PI / 4;
     this.camDist = CONFIG.camera.dist;
+    this.cameraMode = 'third-person';
+    this.firstPersonBlend = 0;
+    this.lookInputCooldown = 0;
     this.camTarget = new THREE.Vector3();
     this.camPos = new THREE.Vector3();
 
@@ -153,6 +156,8 @@ export class Game {
     this.playerVel.set(0, 0, 0);
     this.checkpointPos.copy(this.playerPos);
     this.grounded = false;
+    this.cameraMode = 'third-person';
+    this.firstPersonBlend = 0;
 
     if (this.playerController) this.world.removeCharacterController(this.playerController);
     this.playerController = this.world.createCharacterController(0.01);
@@ -378,6 +383,27 @@ export class Game {
 
   handleZoom(delta) {
     this.camDist = THREE.MathUtils.clamp(this.camDist + delta, CONFIG.camera.minDist, CONFIG.camera.maxDist);
+    if (this.cameraMode === 'first-person') this.camDist = CONFIG.camera.minDist;
+  }
+
+  setCameraMode(mode) {
+    const nextMode = mode === 'first-person' ? 'first-person' : 'third-person';
+    if (this.cameraMode === nextMode) return;
+    this.cameraMode = nextMode;
+    if (nextMode === 'first-person') {
+      this.camDist = CONFIG.camera.minDist;
+      if (!this.input.locked && !this.input.isMobile) {
+        document.body.requestPointerLock().catch(() => {});
+      }
+      this.showNotification('📷 First Person');
+    } else {
+      this.camDist = Math.max(this.camDist, CONFIG.camera.dist);
+      this.showNotification('📷 Third Person');
+    }
+  }
+
+  toggleCameraMode() {
+    this.setCameraMode(this.cameraMode === 'first-person' ? 'third-person' : 'first-person');
   }
 
   loop() {
@@ -395,6 +421,7 @@ export class Game {
     if (this.state === 'playing') {
       if (this.input.pause) { this.handlePause(); return; }
       if (this.input.reset) { this.die(); }
+      if (this.input.toggleCameraModePressed) this.toggleCameraMode();
       if (this.timerStarted) this.timer += dt * 1000;
       this.stats.playTime += dt * 1000;
       updatePlayer(this, dt);
